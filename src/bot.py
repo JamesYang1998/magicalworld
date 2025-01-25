@@ -5,8 +5,10 @@ import os
 import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import os
-from .llm import generate_response
+from src.llm import generate_response
+from src.logger import setup_logger
+
+logger = setup_logger('twitter_bot')
 
 class TwitterBot:
     def __init__(self):
@@ -15,8 +17,8 @@ class TwitterBot:
             # Initialize Twitter API client with OAuth 1.0a
             self.client = tweepy.Client(
                 bearer_token=os.getenv("BearerToken"),
-                consumer_key=os.getenv("APIKey"),
-                consumer_secret=os.getenv("APIKeySecret"),
+                consumer_key=os.getenv("APIkey"),
+                consumer_secret=os.getenv("apiSecretkey"),
                 access_token=os.getenv("AccessToken"),
                 access_token_secret=os.getenv("AccessTokenSecret")
             )
@@ -49,20 +51,19 @@ class TwitterBot:
                     )
                     
                     # Filter out retweets and replies
+                    filtered_tweets = []
                     if response.data:
-                        filtered_tweets = []
                         for tweet in response.data:
                             # Skip if it's a retweet or reply
                             if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets):
                                 filtered_tweets.append(tweet)
-                        response.data = filtered_tweets
                     
-                    if not response.data:
+                    if not filtered_tweets:
                         print("No new tweets found")
                         time.sleep(interval)
                         continue
                     
-                    for tweet in response.data:
+                    for tweet in filtered_tweets:
                         try:
                             tweet_id = str(tweet.id)
                             author_id = str(tweet.author_id)
@@ -74,21 +75,21 @@ class TwitterBot:
                             # Get author information
                             author = self.client.get_user(id=author_id)
                             if not hasattr(author, 'data') or not author.data:
-                                print(f"Could not fetch author information for tweet {tweet_id}")
+                                logger.warning(f"Could not fetch author information for tweet {tweet_id}")
                                 continue
                             
                             username = author.data.username
-                            print(f"Processing tweet {tweet_id} from @{username}")
+                            logger.info(f"Processing tweet {tweet_id} from @{username}")
                         except AttributeError as e:
-                            print(f"Error accessing tweet attributes: {e}")
+                            logger.error(f"Error accessing tweet attributes: {e}", exc_info=True)
                             continue
                         except Exception as e:
-                            print(f"Unexpected error processing tweet: {e}")
+                            logger.error(f"Unexpected error processing tweet: {e}", exc_info=True)
                             continue
                         
                         # Check if we can reply to this user today
                         if self.can_reply_to_user(author_id):
-                            print(f"New tweet from @{username}: {tweet.text[:50]}...")
+                            logger.info(f"New tweet from @{username}: {tweet.text[:50]}...")
                             if self._reply_to_tweet(tweet_id, author_id, username, tweet.text):
                                 self.processed_tweets.add(tweet_id)
                         
@@ -102,17 +103,19 @@ class TwitterBot:
                     reset_time = int(e.response.headers.get('x-rate-limit-reset', 900))
                     current_time = int(datetime.now(timezone.utc).timestamp())
                     sleep_time = max(reset_time - current_time, 60)
-                    print(f"Rate limit exceeded. Waiting {sleep_time} seconds...")
+                    logger.warning(f"Rate limit exceeded. Waiting {sleep_time} seconds...")
                     time.sleep(sleep_time)
                     continue
                     
                 except tweepy.TwitterServerError as e:
-                    print(f"Twitter server error: {e}")
+                    logger.error(f"Twitter server error: {e}", exc_info=True)
+                    logger.info("Waiting 60 seconds before retry...")
                     time.sleep(60)
                     continue
                     
                 except Exception as e:
-                    print(f"Error processing tweets: {e}")
+                    logger.error(f"Error processing tweets: {e}", exc_info=True)
+                    logger.info("Waiting 30 seconds before retry...")
                     time.sleep(30)
                     continue
                     

@@ -1,6 +1,7 @@
 import time
 from openai import OpenAI
-from config.config import OPENAI_API_KEY
+import os
+OPENAI_API_KEY = os.getenv('OPENAIAPI')  # Using the provided API key
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
