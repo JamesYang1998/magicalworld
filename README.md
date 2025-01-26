@@ -22,16 +22,33 @@ Draft PR verification test.
 
 ## Installation
 
-1. Clone or download this repository
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-3. Copy `.env.template` to `.env`:
-```bash
-cp .env.template .env
-```
-4. Configure your API credentials in `.env`
+1. Install Python 3.12 and Git from their official websites:
+   - Python: https://www.python.org/downloads/
+   - Git: https://git-scm.com/downloads
+
+2. Clone the repository:
+   ```bash
+   # If you encounter HTTP2 errors, use this command:
+   git -c http.version=1.1 clone https://github.com/JamesYang1998/magicalworld.git
+   cd magicalworld
+   ```
+
+3. Install dependencies:
+   ```bash
+   # If you encounter SSL certificate errors, use this command:
+   pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+   ```
+
+4. Set up environment variables:
+   ```bash
+   # On Windows:
+   copy .env.template .env
+   
+   # On Linux/Mac:
+   cp .env.template .env
+   ```
+
+5. Configure your API credentials in `.env`
 
 ## Configuration
 
@@ -63,7 +80,7 @@ python3 src/run_bot.py
 
 Run the test suite:
 ```bash
-python -m pytest src/test_*.py -v
+python -m pytest tests/ -v
 ```
 
 ## Customization

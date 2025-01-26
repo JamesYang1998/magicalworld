@@ -1,14 +1,11 @@
-import sys
 import os
-import time
-from datetime import datetime
+import sys
 from unittest.mock import Mock, patch
-import tweepy
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.bot import TwitterBot  # noqa: E402
+from src.mock_data import MOCK_TWEETS, MOCK_USERS  # noqa: E402
 
-from src.bot import TwitterBot
-from src.mock_data import MOCK_TWEETS, MOCK_USERS
 
 def create_mock_tweet(tweet_data):
     """Create a mock tweet object from dictionary data"""
@@ -22,6 +19,7 @@ def create_mock_tweet(tweet_data):
         tweet.referenced_tweets = None
     return tweet
 
+
 def create_mock_user(user_data):
     """Create a mock user response"""
     response = Mock()
@@ -30,6 +28,7 @@ def create_mock_user(user_data):
     user.id = user_data['id']
     response.data = user
     return response
+
 
 def test_monitoring():
     """
@@ -51,18 +50,16 @@ def test_monitoring():
             with patch.object(bot.client, 'get_user', side_effect=lambda id: create_mock_user(MOCK_USERS[id])):
                 with patch.object(bot.client, 'create_tweet') as mock_create_tweet:
                     print("\nProcessing mock tweets...")
-                    
                     if not mock_response.data:
                         print("No tweets found in mock data")
                         return False
-                        
                     print(f"\nFound {len(mock_response.data)} tweets to analyze")
                     
                     # Filter and process tweets
-                    filtered_tweets = []
-                    for tweet in mock_response.data:
-                        if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets):
-                            filtered_tweets.append(tweet)
+                    filtered_tweets = [
+                        tweet for tweet in mock_response.data
+                        if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets)
+                    ]
                     
                     print(f"Identified {len(filtered_tweets)} original tweets (filtered out retweets/replies)")
                     
@@ -74,7 +71,8 @@ def test_monitoring():
                         
                         author = bot.client.get_user(id=author_id)
                         username = author.data.username
-                        print(f"\nTesting reply to @{username}'s tweet: {tweet.text[:50]}...")
+                        preview = tweet.text[:47] + "..." if len(tweet.text) > 47 else tweet.text
+                        print(f"\nTesting reply to @{username}'s tweet: {preview}")
                         
                         if bot.can_reply_to_user(author_id):
                             if bot._reply_to_tweet(tweet_id, author_id, username, tweet.text):
@@ -89,15 +87,22 @@ def test_monitoring():
                     # Print test results
                     print("\nTest Results:")
                     print(f"- Total tweets found: {len(mock_response.data)}")
-                    print(f"- Original tweets (non-retweets/replies): {len(filtered_tweets)}")
+                    print(
+                        f"- Original tweets (non-retweets/replies): "
+                        f"{len(filtered_tweets)}"
+                    )
                     print(f"- Successfully processed: {processed_count}")
                     print("\nReply Statistics:")
                     for user_id, replies in bot.daily_replies.items():
-                        print(f"User {user_id}: {replies['count']} replies today (limit: {bot.max_daily_replies})")
-                    
+                        print(
+                            f"User {user_id}: {replies['count']} replies today "
+                            f"(limit: {bot.max_daily_replies})"
+                        )
                     # Verify daily reply limits
-                    assert all(replies['count'] <= bot.max_daily_replies for replies in bot.daily_replies.values()), \
-                        "Daily reply limit exceeded for some users"
+                    assert all(
+                        replies['count'] <= bot.max_daily_replies
+                        for replies in bot.daily_replies.values()
+                    ), "Daily reply limit exceeded for some users"
                     
                     print("\nAll tests passed successfully!")
                     return processed_count > 0  # Success if we processed at least one tweet

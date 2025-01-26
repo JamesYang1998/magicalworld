@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
 
-from src.bot import TwitterBot
-from src.llm import generate_response
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.bot import TwitterBot  # noqa: E402
+from src.llm import generate_response  # noqa: E402
 
 def test_single_tweet():
     """
@@ -26,7 +26,7 @@ def test_single_tweet():
                 text=tweet_content
             )
             tweet_id = response.data['id']
-            print(f"\nSuccess! Tweet posted successfully.")
+            print("\nSuccess! Tweet posted successfully!")
             print(f"Tweet ID: {tweet_id}")
             print(f"Content: {tweet_content}")
             return True

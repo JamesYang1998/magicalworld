@@ -1,10 +1,9 @@
-import sys
 import os
-import pytest
+import sys
 from unittest.mock import patch, Mock
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.llm import generate_response
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.llm import generate_response  # noqa: E402
 
 def test_generate_response_no_api_key():
     """Test response generation when API key is missing"""

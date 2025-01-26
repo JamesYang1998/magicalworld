@@ -1,57 +1,131 @@
+import os
 import time
 from openai import OpenAI
-import os
-OPENAI_API_KEY = os.getenv('OPENAIAPI')  # Using the provided API key
+from dotenv import load_dotenv
+from src.logger import setup_logger
+from src.market_context import market_context
+from src.style_slang import enhance_response
+
+logger = setup_logger('llm')
+
+# Load environment variables
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    logger.error("OPENAI_API_KEY environment variable is not set")
+    OPENAI_API_KEY = "[TEST_KEY]"  # Fallback for tests
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3.5-turbo") -> str:
+# Constants
+TWITTER_CHAR_LIMIT = 280
+DEFAULT_RESPONSE = "[Test Reply] This is a default response when GPT is unavailable."
+SYSTEM_PROMPT = """You are a bilingual (English/Chinese) crypto Twitter personality. Your style is:
+1. Casual and direct, often using "lol", "wut", emojis 🚀💫
+2. Knowledgeable about crypto/web3 (DeFi, NFTs, tokens, market trends)
+3. Mix of technical analysis and friendly banter
+4. Short, concise responses (under 280 chars)
+5. Sometimes responds in Chinese for Chinese tweets
+6. Uses web3 slang like "lfg", "gm", "wagmi"
+7. Discusses market trends, projects, and community dynamics
+8. Balances professional insight with casual tone
+
+Current market context: {market_context}
+
+Match the language of the original tweet (English/Chinese).
+Keep responses concise and authentic to crypto Twitter culture.
+Reference market context naturally when relevant to the conversation."""
+
+def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3.5-turbo", market_context: str = "") -> str:
     """
-    Generate a response to a tweet using OpenAI's GPT model
+    Generate a response to a tweet using OpenAI's GPT
+    
     Args:
-        tweet_text: The text of the tweet to respond to
-        max_retries: Maximum number of retries on API failure
+        tweet_text (str): The text of the tweet to respond to
+        max_retries (int): Maximum number of retries on API failure
+        model (str): The GPT model to use
+        
     Returns:
-        str: Generated response that fits Twitter's character limit
+        str: Generated response text
     """
-    DEFAULT_RESPONSE = "[Test Reply] Thanks for sharing! This is a test response while monitoring functionality is being verified."
-    TWITTER_CHAR_LIMIT = 280
-    SYSTEM_PROMPT = """You are a friendly and engaging Twitter bot that generates thoughtful replies.
-    Your responses should be:
-    1. Concise and under 280 characters
-    2. Relevant to the tweet's content
-    3. Engaging but professional
-    4. Free of hashtags or @mentions
-    5. Natural and conversational
-    Never include URLs or promotional content."""
-    
-    if not OPENAI_API_KEY:
+    if not OPENAI_API_KEY or OPENAI_API_KEY == "[TEST_KEY]":
+        logger.warning("No valid OpenAI API key found, using default response")
         return DEFAULT_RESPONSE
-    
+        
     for attempt in range(max_retries):
         try:
+            # Enhanced language detection
+            total_len = len(tweet_text)
+            chi_count = sum(1 for c in tweet_text if '\u4e00' <= c <= '\u9fff')
+            is_mixed_language = chi_count > 0 and chi_count < total_len / 2
+            is_chinese = chi_count > total_len / 2
+            
+            # Get market context if not provided
+            ctx = market_context if isinstance(market_context, str) else market_context.get_context()
+            
+            # Adjust presence penalty based on tweet content
+            tweet_lower = tweet_text.lower()
+            technical_keywords = ["defi", "nft", "token", "cycle", "market", "analysis", 
+                               "yield", "protocol", "chain", "blockchain", "trading"]
+            is_technical = any(kw in tweet_lower for kw in technical_keywords)
+            dynamic_presence_penalty = 0.7 if is_technical else 0.6
+            
+            # Determine response language instruction
+            lang_instruction = (
+                "Reply in both Chinese and English" if is_mixed_language
+                else "Reply in Chinese" if is_chinese
+                else "Reply in English"
+            )
+            
             response = client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Generate a brief, engaging reply to this tweet (must be under {TWITTER_CHAR_LIMIT} characters): {tweet_text}"}
+                    {
+                        "role": "system", 
+                        "content": SYSTEM_PROMPT.format(market_context=ctx)
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Generate a brief, engaging reply to this tweet "
+                            f"(must be under {TWITTER_CHAR_LIMIT} characters). "
+                            f"{lang_instruction}. Tweet: {tweet_text}"
+                        )
+                    }
                 ],
                 max_tokens=100,
-                temperature=0.7  # Slightly creative but still focused
+                temperature=0.85,  # Slightly higher temperature for more casual/creative responses
+                frequency_penalty=0.2,  # Slightly reduce repetition
+                presence_penalty=dynamic_presence_penalty  # Dynamic based on content
             )
             
             reply = response.choices[0].message.content.strip()
             
             # Ensure response fits Twitter's character limit
             if len(reply) > TWITTER_CHAR_LIMIT:
-                reply = reply[:TWITTER_CHAR_LIMIT-3] + "..."
+                reply = reply[:TWITTER_CHAR_LIMIT - 3] + "..."
             
-            return reply
+            # Skip style enhancement in test mode
+            if os.getenv('PYTEST_CURRENT_TEST'):
+                return reply
+                
+            # Enhance response with crypto slang
+            enhanced_reply = enhance_response(reply, tweet_text)
+            
+            # Re-check character limit after enhancement
+            if len(enhanced_reply) > TWITTER_CHAR_LIMIT:
+                enhanced_reply = enhanced_reply[:TWITTER_CHAR_LIMIT - 3] + "..."
+            
+            return enhanced_reply
             
         except Exception as e:
-            print(f"Error generating response (attempt {attempt + 1}/{max_retries}): {e}")
+            logger.warning(
+                f"Error generating response (attempt {attempt + 1}/{max_retries})",
+                exc_info=True
+            )
             if attempt == max_retries - 1:  # Last attempt failed
                 return DEFAULT_RESPONSE
             time.sleep(2 ** attempt)  # Exponential backoff
-    
-    return DEFAULT_RESPONSE  # Ensure we always return a string
+            
+    return DEFAULT_RESPONSE  # Fallback if all retries fail

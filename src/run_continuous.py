@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
+import signal
 import sys
 import time
-import traceback
 from datetime import datetime
-import signal
-import os
 
 from src.logger import setup_logger
 

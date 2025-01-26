@@ -1,35 +1,40 @@
-import tweepy
-from datetime import datetime, timedelta, timezone
-import sys
 import os
+import sys
 import time
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from datetime import datetime, timezone
 
-from src.llm import generate_response
-from src.logger import setup_logger
+import tweepy
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.llm import generate_response  # noqa: E402
+from src.logger import setup_logger  # noqa: E402
+
 
 logger = setup_logger('twitter_bot')
 
+
 class TwitterBot:
+
     def __init__(self):
         """Initialize Twitter bot with OAuth 1.0a client and tracking structures"""
         try:
             # Initialize Twitter API client with OAuth 1.0a
             self.client = tweepy.Client(
-                bearer_token=os.getenv("BearerToken"),
-                consumer_key=os.getenv("APIkey"),
-                consumer_secret=os.getenv("apiSecretkey"),
-                access_token=os.getenv("AccessToken"),
-                access_token_secret=os.getenv("AccessTokenSecret")
+                bearer_token=os.getenv("TWITTER_BEARER_TOKEN"),
+                consumer_key=os.getenv("TWITTER_API_KEY"),
+                consumer_secret=os.getenv("TWITTER_API_SECRET"),
+                access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
+                access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
             )
             # Initialize tracking structures
             self.daily_replies = {}  # Track daily replies per user
             self.max_daily_replies = 3
             self.processed_tweets = set()  # Track processed tweet IDs
-            print("Twitter bot initialized successfully")
+            logger.info("Twitter bot initialized successfully")
         except Exception as e:
-            print(f"Error initializing Twitter bot: {e}")
+            logger.error("Error initializing Twitter bot", exc_info=True)
             raise
+
 
     def monitor_list_tweets(self, list_id: str, interval: int = 60):
         """
@@ -38,12 +43,11 @@ class TwitterBot:
             list_id (str): ID of the Twitter list to monitor
             interval (int): Time between checks in seconds
         """
-        print(f"Starting to monitor tweets from list {list_id} at {datetime.now(timezone.utc)}")
-        
+        logger.info(f"Starting to monitor tweets from list {list_id} at {datetime.now(timezone.utc)}")
         try:
             while True:
                 try:
-                    print(f"\nChecking for new tweets at {datetime.now(timezone.utc)}")
+                    logger.info(f"Checking for new tweets at {datetime.now(timezone.utc)}")
                     response = self.client.get_list_tweets(
                         id=list_id,
                         max_results=10,
@@ -51,12 +55,10 @@ class TwitterBot:
                     )
                     
                     # Filter out retweets and replies
-                    filtered_tweets = []
-                    if response.data:
-                        for tweet in response.data:
-                            # Skip if it's a retweet or reply
-                            if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets):
-                                filtered_tweets.append(tweet)
+                    filtered_tweets = [
+                        tweet for tweet in response.data
+                        if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets)
+                    ] if response.data else []
                     
                     if not filtered_tweets:
                         print("No new tweets found")
@@ -120,10 +122,11 @@ class TwitterBot:
                     continue
                     
         except KeyboardInterrupt:
-            print("\nMonitoring stopped by user")
+            logger.info("Monitoring stopped by user")
             return True
             
         return True
+
 
     def can_reply_to_user(self, user_id: str) -> bool:
         """
@@ -137,6 +140,7 @@ class TwitterBot:
         
         return self.daily_replies[user_id]['count'] < self.max_daily_replies
 
+
     def monitor_tweets(self, list_id: str, interval: int = 60):
         """
         Deprecated: Use monitor_list_tweets instead
@@ -145,12 +149,13 @@ class TwitterBot:
         print("Warning: This method is deprecated. Please use monitor_list_tweets instead.")
         return self.monitor_list_tweets(list_id, interval)
 
+
     def _reply_to_tweet(self, tweet_id: str, user_id: str, user_handle: str, tweet_text: str):
         """
         Generate and post a reply to a tweet if within limits
         """
         if not self.can_reply_to_user(user_id):
-            print(f"Daily reply limit reached for user {user_handle}")
+            logger.warning(f"Daily reply limit reached for user {user_handle}")
             return False
 
         # Generate response using LLM
@@ -163,8 +168,9 @@ class TwitterBot:
                 in_reply_to_tweet_id=tweet_id
             )
             self.daily_replies[user_id]['count'] += 1
-            print(f"Successfully replied to @{user_handle}'s tweet: {tweet_text[:50]}...")
+            preview = tweet_text[:47] + "..." if len(tweet_text) > 47 else tweet_text
+            logger.info(f"Successfully replied to @{user_handle}'s tweet: {preview}")
             return True
         except Exception as e:
-            print(f"Error replying to tweet: {e}")
+            logger.error("Error replying to tweet", exc_info=True)
             return False

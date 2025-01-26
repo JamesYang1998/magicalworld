@@ -1,6 +1,7 @@
 import logging
-from datetime import datetime
 import os
+from datetime import datetime
+
 
 def setup_logger(name='twitter_bot'):
     """Set up logger with file and console handlers"""
