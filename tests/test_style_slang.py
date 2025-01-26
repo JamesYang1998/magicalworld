@@ -47,25 +47,28 @@ def test_enhance_response_greeting():
 
 def test_enhance_response_market():
     """Test response enhancement for market discussion"""
-    tweet = "How's the market looking today?"
+    tweet = "How's the market looking today? Very bullish!"
     response = "Looking bullish!"
     
-    with patch('random.random', return_value=0.1), \
-         patch('random.choice', side_effect=['moon', '🚀']), \
-         patch('os.getenv', return_value=None):  # Not in test mode
+    # Test both slang and emoji addition for market discussion
+    with patch('random.random', side_effect=[0.1, 0.05]), \
+         patch('random.choice', side_effect=['alpha', '🚀']), \
+         patch('os.getenv', return_value=None):
         enhanced = enhance_response(response, tweet)
-        assert 'moon' in enhanced
-        assert '🚀' in enhanced
+        assert 'alpha' in enhanced  # Should include technical term
+        assert '🚀' in enhanced  # Should include emoji for positive market context
 
 def test_enhance_response_emoji():
-    """Test that responses always include an emoji"""
-    tweet = "Just a regular tweet"
-    response = "Just a regular response"
+    """Test emoji addition for positive market context"""
+    tweet = "Market is pumping! Bull run incoming!"
+    response = "Definitely looking strong"
     
-    with patch('random.choice', return_value='🚀'), \
+    # Test emoji addition with 5% probability (below 10% threshold)
+    with patch('random.random', return_value=0.05), \
+         patch('random.choice', return_value='🚀'), \
          patch('os.getenv', return_value=None):  # Not in test mode
         enhanced = enhance_response(response, tweet)
-        assert '🚀' in enhanced
+        assert '🚀' in enhanced  # Should include emoji for positive market context
 
 def test_enhance_response_character_limit():
     """Test that enhanced responses respect character limit"""

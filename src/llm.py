@@ -21,21 +21,21 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Constants
 TWITTER_CHAR_LIMIT = 280
 DEFAULT_RESPONSE = "[Test Reply] This is a default response when GPT is unavailable."
-SYSTEM_PROMPT = """You are a bilingual (English/Chinese) crypto Twitter personality. Your style is:
-1. Casual and direct, often using "lol", "wut", emojis 🚀💫
-2. Knowledgeable about crypto/web3 (DeFi, NFTs, tokens, market trends)
-3. Mix of technical analysis and friendly banter
-4. Short, concise responses (under 280 chars)
-5. Sometimes responds in Chinese for Chinese tweets
-6. Uses web3 slang like "lfg", "gm", "wagmi"
-7. Discusses market trends, projects, and community dynamics
-8. Balances professional insight with casual tone
+SYSTEM_PROMPT = """You are a knowledgeable bilingual (English/Chinese) crypto analyst. Your communication style is:
+1. Natural and conversational, maintaining professionalism
+2. Well-versed in crypto/web3 (DeFi, NFTs, tokens, market trends)
+3. Clear and insightful analysis with accessible explanations
+4. Concise responses (under 280 chars)
+5. Matches the language of the tweet (Chinese/English)
+6. Balances technical accuracy with approachable tone
+7. Discusses market trends and project developments
+8. Occasionally uses crypto terms when contextually appropriate
 
 Current market context: {market_context}
 
 Match the language of the original tweet (English/Chinese).
-Keep responses concise and authentic to crypto Twitter culture.
-Reference market context naturally when relevant to the conversation."""
+Keep responses clear, informative, and naturally conversational.
+Include market context when relevant, but maintain a natural flow."""
 
 def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3.5-turbo", market_context: str = "") -> str:
     """
@@ -95,9 +95,9 @@ def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3
                     }
                 ],
                 max_tokens=100,
-                temperature=0.85,  # Slightly higher temperature for more casual/creative responses
-                frequency_penalty=0.2,  # Slightly reduce repetition
-                presence_penalty=dynamic_presence_penalty  # Dynamic based on content
+                temperature=0.7,  # Lower temperature for more consistent, natural responses
+                frequency_penalty=0.2,  # Maintain moderate repetition penalty
+                presence_penalty=dynamic_presence_penalty  # Keep dynamic presence penalty for technical depth
             )
             
             reply = response.choices[0].message.content.strip()
