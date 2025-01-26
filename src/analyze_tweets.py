@@ -20,11 +20,11 @@ def analyze_user_tweets(username: str = "JimsYoung_", max_results: int = 100):
         # Get user ID first
         user = bot.client.get_user(username=username)
         if not user or not user.data:
-            logger.error(f"Could not find user @{username}")
+            logger.error(f"Could not find user {username}")
             return
             
         user_id = user.data.id
-        logger.info(f"Found user @{username} with ID: {user_id}")
+        logger.info(f"Found user {username} with ID: {user_id}")
         
         # Fetch user's tweets
         tweets = bot.client.get_users_tweets(
@@ -34,7 +34,7 @@ def analyze_user_tweets(username: str = "JimsYoung_", max_results: int = 100):
         )
         
         if not tweets or not tweets.data:
-            logger.info(f"No tweets found for @{username}")
+            logger.info(f"No tweets found for user {username}")
             return
             
         logger.info(f"Found {len(tweets.data)} tweets to analyze")

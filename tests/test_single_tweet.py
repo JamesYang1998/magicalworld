@@ -51,12 +51,12 @@ def test_single_reply():
                 call_args = mock_create_tweet.call_args[1]
                 assert 'in_reply_to_tweet_id' in call_args, "Reply must include reference to original tweet"
                 assert call_args['in_reply_to_tweet_id'] == tweet_id, "Reply must reference correct tweet ID"
-                assert call_args['text'].startswith(f"@{user_handle}"), "Reply must mention original author"
+                assert not call_args['text'].startswith('@'), "Reply should not include @ mentions"
                 
                 if result:
                     print("\nSuccess! Reply posted successfully!")
                     print(f"Original tweet ID: {tweet_id}")
-                    print(f"Replied to: @{user_handle}")
+                    print(f"Replied to user: {user_handle}")
                     return True
                 else:
                     print("\nFailed to post reply")

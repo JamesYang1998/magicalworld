@@ -87,7 +87,7 @@ class TwitterBot:
                             continue
                         
                         username = author.data.username
-                        logger.info(f"Processing tweet {tweet_id} from @{username}")
+                        logger.info(f"Processing tweet {tweet_id} from user {username}")
                     except AttributeError as e:
                         logger.error(f"Error accessing tweet attributes: {e}", exc_info=True)
                         continue
@@ -97,7 +97,7 @@ class TwitterBot:
                     
                     # Check if we can reply to this user today
                     if self.can_reply_to_user(author_id):
-                        logger.info(f"New tweet from @{username}: {tweet.text[:50]}...")
+                        logger.info(f"New tweet from user {username}: {tweet.text[:50]}...")
                         if self._reply_to_tweet(tweet_id, author_id, username, tweet.text):
                             self.processed_tweets.add(tweet_id)
                     
@@ -223,12 +223,12 @@ class TwitterBot:
         # Post reply
         try:
             self.client.create_tweet(
-                text=f"@{user_handle} {response}",
+                text=response,
                 in_reply_to_tweet_id=tweet_id
             )
             self.daily_replies[user_id]['count'] += 1
             preview = tweet_text[:47] + "..." if len(tweet_text) > 47 else tweet_text
-            logger.info(f"Successfully replied to @{user_handle}'s tweet: {preview}")
+            logger.info(f"Successfully replied to {user_handle}'s tweet: {preview}")
             return True
         except Exception as e:
             logger.error("Error replying to tweet", exc_info=True)
