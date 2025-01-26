@@ -11,7 +11,7 @@ def test_chinese_tweet_response():
     chinese_tweet = "币圈最近怎么样？"
     
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content="牛市来了 🚀"))]
+    mock_response.choices = [Mock(message=Mock(content="牛市来了，你觉得呢？"))]
     
     with patch('src.llm.OPENAI_API_KEY', 'test_key'), \
          patch('src.llm.client') as mock_client:
@@ -28,7 +28,7 @@ def test_english_tweet_response():
     english_tweet = "How's the crypto market looking?"
     
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content="Looking bullish fam! LFG 🚀"))]
+    mock_response.choices = [Mock(message=Mock(content="Market looks strong. What's your take on it?"))]
     
     with patch('src.llm.OPENAI_API_KEY', 'test_key'), \
          patch('src.llm.client') as mock_client:
@@ -45,7 +45,7 @@ def test_mixed_language_response():
     mixed_tweet = "GM! 最近defi很火啊！"
     
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content="是的！DeFi is on fire! 🔥"))]
+    mock_response.choices = [Mock(message=Mock(content="是的，DeFi很有发展。你怎么看？"))]
     
     with patch('src.llm.OPENAI_API_KEY', 'test_key'), \
          patch('src.llm.client') as mock_client:
@@ -56,22 +56,22 @@ def test_mixed_language_response():
         call_args = mock_client.chat.completions.create.call_args[1]
         assert "Reply in both Chinese and English" in call_args['messages'][1]['content']
 
-def test_crypto_style_elements():
-    """Test that responses include crypto Twitter style elements"""
-    tweet = "Just bought some ETH!"
+def test_conversational_elements():
+    """Test that responses are conversational and encourage engagement"""
+    tweet = "Just bought some ETH"
     
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content="wagmi! smart move ser 🚀"))]
+    mock_response.choices = [Mock(message=Mock(content="Good move. How long have you been investing in crypto?"))]
     
     with patch('src.llm.OPENAI_API_KEY', 'test_key'), \
          patch('src.llm.client') as mock_client:
         mock_client.chat.completions.create.return_value = mock_response
         response = generate_response(tweet)
         
-        # Check for crypto Twitter style elements
-        style_elements = ['wagmi', 'gm', 'ser', 'lfg', '🚀', '💫']
-        has_style = any(element in response.lower() for element in style_elements)
-        assert has_style, "Response should include crypto Twitter style elements"
+        # Check for conversational elements
+        assert '?' in response, "Response should include a question"
+        assert not any(char in response for char in ['!', '#']), "Response should not include ! or #"
+        assert not any(c for c in response if '\U0001F300' <= c <= '\U0001F9FF'), "Response should not include emojis"
 
 def test_response_length():
     """Test that responses stay within Twitter character limit"""

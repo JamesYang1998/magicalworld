@@ -3,13 +3,12 @@
 import os
 import random
 
-# Common crypto Twitter slang and emojis
+# Common crypto terminology for natural conversation
 CRYPTO_SLANG = {
-    'greetings': ['gm', 'gn', 'wagmi', 'lfg', 'ser'],
-    'reactions': ['ngmi', 'ded', 'anon', 'fren', 'ser'],
-    'market': ['moon', 'ape', 'degen', 'rekt', 'pump', 'dump'],
-    'emojis': ['🚀', '💫', '🔥', '💎', '🌙', '⬆️', '📈', '🐂'],
-    'technical': ['alpha', 'dyor', 'nfa', 'fud', 'hodl', 'iykyk']
+    'greetings': ['hello', 'hi', 'hey', 'good morning'],
+    'reactions': ['interesting', 'understood', 'noted'],
+    'market': ['bullish', 'bearish', 'trending'],
+    'technical': ['research', 'analysis', 'perspective']
 }
 
 def get_random_slang(category: str = None, probability: float = 0.15) -> str:
@@ -37,41 +36,59 @@ def get_random_slang(category: str = None, probability: float = 0.15) -> str:
 
 def enhance_response(response: str, tweet_text: str) -> str:
     """
-    Enhance response with appropriate crypto terminology
+    Enhance response with natural conversation style and appropriate terminology
     Args:
         response: Original GPT response
         tweet_text: Original tweet text for context
     Returns:
-        str: Enhanced response with contextual crypto terms
+        str: Enhanced response with natural conversation style
     """
     tweet_lower = tweet_text.lower()
     
     # Calculate available space for enhancements
     available_chars = 280 - len(response)
     
-    # Add greeting for morning tweets, but with lower probability
+    # Add natural greeting for morning tweets
     if available_chars > 5 and any(word in tweet_lower for word in ['gm', 'morning', 'hello', 'hi', '早上好']):
-        prefix = get_random_slang('greetings', 0.3)  # Reduced from 0.8
+        prefix = get_random_slang('greetings', 0.3)
         if prefix and len(prefix) + 2 <= available_chars:
-            response = f"{prefix}! {response}"
+            response = f"{prefix}, {response}"
             available_chars -= len(prefix) + 2
     
-    # Add market-related terms only for technical discussions
+    # Add relevant terminology for technical discussions
     if available_chars > 2 and any(word in tweet_lower for word in ['market', 'price', 'analysis', 'trend', 'bull', 'bear']):
-        suffix = get_random_slang('technical', 0.2)  # Reduced from 0.5, using technical terms
+        suffix = get_random_slang('technical', 0.2)
         if suffix and len(suffix) + 1 <= available_chars:
-            response = f"{response} {suffix}"
+            response = f"{response}. From my {suffix}"
             available_chars -= len(suffix) + 1
     
-    # Add emoji very rarely (10% chance) and only for positive market discussions
-    if not os.getenv('PYTEST_CURRENT_TEST'):
-        positive_keywords = ['bull', 'pump', 'moon', 'green', 'up']
-        if (random.random() < 0.1 and  # 10% chance instead of 100%
-            available_chars >= 2 and
-            any(word in tweet_lower for word in positive_keywords) and
-            not any(e in response for e in CRYPTO_SLANG['emojis'])):
-            emoji = random.choice(CRYPTO_SLANG['emojis'])
-            if len(emoji) + 1 <= available_chars:
-                response = f"{response} {emoji}"
+    # Clean up response formatting
+    response = response.replace('!', '.')  # Replace exclamation marks with periods
+    response = ' '.join(word for word in response.split() if not word.startswith('#'))  # Remove hashtags
+    
+    # Remove any emojis (covering the full Unicode range for emojis)
+    response = ''.join(c for c in response if not (
+        '\U0001F300' <= c <= '\U0001F9FF' or  # Miscellaneous Symbols and Pictographs
+        '\U0001F600' <= c <= '\U0001F64F' or  # Emoticons
+        '\U0001F680' <= c <= '\U0001F6FF' or  # Transport and Map Symbols
+        '\U0001F900' <= c <= '\U0001F9FF' or  # Supplemental Symbols and Pictographs
+        '\U00002702' <= c <= '\U000027B0' or  # Dingbats
+        '\U000024C2' <= c <= '\U0001F251'     # Enclosed characters
+    ))
+    
+    # Add engagement prompts with 15% probability if there's space
+    if random.random() < 0.15 and len(response) < 240:  # Leave room for the question
+        questions = [
+            "What are your thoughts on this?",
+            "Have you experienced something similar?",
+            "What's your take on this?",
+            "How do you see it?",
+            "What has been your experience?",
+            "Do you agree with this perspective?",
+            "How long have you been following this?",
+            "What trends are you noticing?"
+        ]
+        question = random.choice(questions)
+        response = f"{response} {question}"
     
     return response.strip()

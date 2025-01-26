@@ -58,22 +58,34 @@ def test_enhance_response_market():
         assert 'alpha' in enhanced  # Should include technical term
         assert '🚀' in enhanced  # Should include emoji for positive market context
 
-def test_enhance_response_emoji():
-    """Test emoji addition for positive market context"""
-    tweet = "Market is pumping! Bull run incoming!"
-    response = "Definitely looking strong"
+def test_enhance_response_cleanup():
+    """Test response cleanup (removing !, #, emojis)"""
+    tweet = "Market is pumping! #bullrun 🚀"
+    response = "Looking strong! #crypto"
     
-    # Test emoji addition with 5% probability (below 10% threshold)
-    with patch('random.random', return_value=0.05), \
-         patch('random.choice', return_value='🚀'), \
-         patch('os.getenv', return_value=None):  # Not in test mode
+    with patch('os.getenv', return_value=None):  # Not in test mode
         enhanced = enhance_response(response, tweet)
-        assert '🚀' in enhanced  # Should include emoji for positive market context
+        assert '!' not in enhanced
+        assert '#' not in enhanced
+        assert '🚀' not in enhanced
+        assert 'Looking strong' in enhanced
 
 def test_enhance_response_character_limit():
     """Test that enhanced responses respect character limit"""
-    tweet = "gm everyone!"
+    tweet = "gm everyone"
     response = "x" * 275  # Near the limit
     
     enhanced = enhance_response(response, tweet)
     assert len(enhanced) <= 280  # Twitter's character limit
+
+def test_enhance_response_engagement():
+    """Test that responses can include engagement prompts"""
+    tweet = "Just started learning about DeFi"
+    response = "DeFi is transforming finance"
+    
+    with patch('random.random', return_value=0.1), \
+         patch('random.choice', return_value="What has been your experience?"):
+        enhanced = enhance_response(response, tweet)
+        assert "?" in enhanced
+        assert "What has been your experience?" in enhanced
+        assert len(enhanced) <= 280

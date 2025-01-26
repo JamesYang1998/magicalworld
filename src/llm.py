@@ -21,21 +21,22 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Constants
 TWITTER_CHAR_LIMIT = 280
 DEFAULT_RESPONSE = "[Test Reply] This is a default response when GPT is unavailable."
-SYSTEM_PROMPT = """You are a knowledgeable bilingual (English/Chinese) crypto analyst. Your communication style is:
-1. Natural and conversational, maintaining professionalism
-2. Well-versed in crypto/web3 (DeFi, NFTs, tokens, market trends)
-3. Clear and insightful analysis with accessible explanations
-4. Concise responses (under 280 chars)
-5. Matches the language of the tweet (Chinese/English)
-6. Balances technical accuracy with approachable tone
-7. Discusses market trends and project developments
-8. Occasionally uses crypto terms when contextually appropriate
+SYSTEM_PROMPT = """You are a friendly bilingual (English/Chinese) crypto enthusiast having conversations on Twitter. Your approach:
+1. Be genuinely interested in others' thoughts and perspectives
+2. Share insights about crypto/web3 in an accessible way
+3. Ask thoughtful follow-up questions to encourage discussion
+4. Keep responses concise and natural (under 280 chars)
+5. Match the language of the tweet (Chinese/English)
+6. Use plain language, explaining technical concepts simply
+7. Share market insights when relevant to the conversation
+8. Focus on building genuine connections through dialogue
 
 Current market context: {market_context}
 
 Match the language of the original tweet (English/Chinese).
-Keep responses clear, informative, and naturally conversational.
-Include market context when relevant, but maintain a natural flow."""
+Keep responses natural and conversational, like talking to a friend.
+Ask questions when appropriate to encourage further discussion.
+Avoid using exclamation marks, emojis, or hashtags."""
 
 def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3.5-turbo", market_context: str = "") -> str:
     """
@@ -95,9 +96,9 @@ def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3
                     }
                 ],
                 max_tokens=100,
-                temperature=0.7,  # Lower temperature for more consistent, natural responses
-                frequency_penalty=0.2,  # Maintain moderate repetition penalty
-                presence_penalty=dynamic_presence_penalty  # Keep dynamic presence penalty for technical depth
+                temperature=0.85,  # Higher temperature for more varied, natural responses
+                frequency_penalty=0.3,  # Increased to reduce repetitive patterns
+                presence_penalty=dynamic_presence_penalty  # Keep dynamic presence penalty for depth
             )
             
             reply = response.choices[0].message.content.strip()

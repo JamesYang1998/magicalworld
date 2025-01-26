@@ -3,13 +3,13 @@
 MOCK_TWEETS = [
     {
         'id': '1',
-        'text': 'This is a test tweet #1',
+        'text': 'This is test tweet one',
         'author_id': '101',
         'referenced_tweets': None
     },
     {
         'id': '2',
-        'text': 'This is a test tweet #2',
+        'text': 'This is test tweet two',
         'author_id': '102',
         'referenced_tweets': None
     },
