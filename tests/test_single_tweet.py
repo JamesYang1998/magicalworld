@@ -11,7 +11,7 @@ from src.mock_data import MOCK_TWEETS, MOCK_USERS  # noqa: E402
 
 def test_single_reply():
     """
-    Test replying to a single tweet using GPT-3.5-turbo
+    Test replying to a single tweet using GPT-4
     """
     try:
         print("Initializing Twitter bot...")
@@ -26,9 +26,9 @@ def test_single_reply():
         print(f"\nPreparing to reply to tweet from @{user_handle}...")
         print(f"Original tweet: {original_tweet}")
         
-        # Generate response using GPT-3.5-turbo
+        # Generate response using GPT-4
         print("\nGenerating reply content...")
-        response_content = generate_response(original_tweet, model="gpt-3.5-turbo")
+        response_content = generate_response(original_tweet)
         print(f"Generated response: {response_content}")
         
         # Test reply functionality

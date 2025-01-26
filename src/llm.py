@@ -38,7 +38,7 @@ Keep responses natural and conversational, like talking to a friend.
 Ask questions when appropriate to encourage further discussion.
 Avoid using exclamation marks, emojis, or hashtags."""
 
-def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-3.5-turbo", market_context: str = "") -> str:
+def generate_response(tweet_text: str, max_retries: int = 3, model: str = "gpt-4", market_context: str = "") -> str:
     """
     Generate a response to a tweet using OpenAI's GPT
     
