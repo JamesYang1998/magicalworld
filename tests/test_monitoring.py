@@ -32,12 +32,12 @@ def create_mock_user(user_data):
 
 def test_monitoring():
     """
-    Test the monitoring functionality using mock data to verify core features
+    Test single list monitoring functionality using mock data
     """
     bot = TwitterBot()
     list_id = "1872292999155040454"
     
-    print("Testing monitoring functionality with mock data")
+    print("Testing single list monitoring functionality with mock data")
     print("This test will verify tweet filtering and reply logic")
     
     try:
@@ -105,12 +105,68 @@ def test_monitoring():
                     ), "Daily reply limit exceeded for some users"
                     
                     print("\nAll tests passed successfully!")
-                    return processed_count > 0  # Success if we processed at least one tweet
+                    assert processed_count > 0, "No tweets were processed"
     
     except Exception as e:
         print(f"\nError during test: {e}")
-        return False
+        raise  # Re-raise the exception to fail the test properly
+
+
+def test_multiple_lists_monitoring():
+    """
+    Test monitoring of multiple lists with different mock data for each list
+    """
+    bot = TwitterBot()
+    list_ids = ["1872292999155040454", "1882727258596450791"]
+    
+    print("\nTesting multiple list monitoring functionality")
+    print(f"Testing lists: {', '.join(list_ids)}")
+    
+    try:
+        # Create different mock data for each list
+        list1_tweets = MOCK_TWEETS[:2]  # First two tweets for list 1
+        list2_tweets = MOCK_TWEETS[2:]  # Remaining tweets for list 2
+        
+        def mock_get_list_tweets(id, **kwargs):
+            """Mock different responses based on list ID"""
+            response = Mock()
+            if id == list_ids[0]:
+                response.data = [create_mock_tweet(t) for t in list1_tweets]
+            else:
+                response.data = [create_mock_tweet(t) for t in list2_tweets]
+            return response
+        
+        # Set up patches for Twitter API calls
+        with patch.object(bot.client, 'get_list_tweets', side_effect=mock_get_list_tweets):
+            with patch.object(bot.client, 'get_user', side_effect=lambda id: create_mock_user(MOCK_USERS[id])):
+                with patch.object(bot.client, 'create_tweet') as mock_create_tweet:
+                    print("\nProcessing tweets from multiple lists...")
+                    
+                    # Monitor both lists in single-pass mode
+                    bot.monitor_multiple_lists(list_ids, interval=1)
+                    
+                    # Verify tweets from both lists were processed
+                    processed_tweets = bot.processed_tweets
+                    print(f"\nProcessed tweets: {len(processed_tweets)}")
+                    
+                    # Verify daily reply limits
+                    for user_id, replies in bot.daily_replies.items():
+                        assert replies['count'] <= bot.max_daily_replies, \
+                            f"Daily reply limit exceeded for user {user_id}"
+                    
+                    # Verify at least one tweet was processed from each list
+                    list1_processed = any(str(t['id']) in processed_tweets for t in list1_tweets)
+                    list2_processed = any(str(t['id']) in processed_tweets for t in list2_tweets)
+                    assert list1_processed, "No tweets processed from list 1"
+                    assert list2_processed, "No tweets processed from list 2"
+                    
+                    print("\nMultiple list monitoring test passed successfully!")
+                    
+    except Exception as e:
+        print(f"\nError during multiple list test: {e}")
+        raise  # Re-raise the exception to fail the test properly
 
 
 if __name__ == "__main__":
     test_monitoring()
+    test_multiple_lists_monitoring()

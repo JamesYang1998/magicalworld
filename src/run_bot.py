@@ -9,11 +9,11 @@ logger = setup_logger('run_bot')
 
 def main():
     bot = TwitterBot()
-    list_id = '1872292999155040454'
+    list_ids = ['1872292999155040454', '1882727258596450791']
     logger.info('Starting Twitter bot with GPT-4 integration...')
-    logger.info(f'Monitoring list: {list_id}')
+    logger.info(f'Monitoring lists: {", ".join(list_ids)}')
     logger.info(f'Maximum replies per user per day: {bot.max_daily_replies}')
-    bot.monitor_list_tweets(list_id)
+    bot.monitor_multiple_lists(list_ids)
 
 
 if __name__ == '__main__':

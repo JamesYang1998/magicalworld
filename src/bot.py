@@ -36,90 +36,149 @@ class TwitterBot:
             raise
 
 
-    def monitor_list_tweets(self, list_id: str, interval: int = 60):
+    def monitor_list_tweets(self, list_id: str, interval: int = 60, max_results: int = 5, single_pass: bool = False):
         """
-        Monitor tweets from a Twitter list directly
+        Monitor tweets from a Twitter list
         Args:
             list_id (str): ID of the Twitter list to monitor
             interval (int): Time between checks in seconds
+            max_results (int): Maximum number of tweets to fetch per request (default: 5)
+            single_pass (bool): If True, only check once and return; if False, monitor continuously
+        Returns:
+            bool: True if successful, False on error
         """
         logger.info(f"Starting to monitor tweets from list {list_id} at {datetime.now(timezone.utc)}")
-        try:
-            while True:
-                try:
-                    logger.info(f"Checking for new tweets at {datetime.now(timezone.utc)}")
-                    response = self.client.get_list_tweets(
-                        id=list_id,
-                        max_results=10,
-                        tweet_fields=['author_id', 'referenced_tweets', 'text']
-                    )
-                    
-                    # Filter out retweets and replies
-                    filtered_tweets = [
-                        tweet for tweet in response.data
-                        if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets)
-                    ] if response.data else []
-                    
-                    if not filtered_tweets:
-                        print("No new tweets found")
-                        time.sleep(interval)
+        
+        while True:
+            try:
+                logger.info(f"Checking list {list_id} for new tweets at {datetime.now(timezone.utc)}")
+                response = self.client.get_list_tweets(
+                    id=list_id,
+                    max_results=max_results,
+                    tweet_fields=['author_id', 'referenced_tweets', 'text']
+                )
+                
+                # Filter out retweets and replies
+                filtered_tweets = [
+                    tweet for tweet in response.data
+                    if not (hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets)
+                ] if response.data else []
+                
+                if not filtered_tweets:
+                    logger.info(f"No new tweets found in list {list_id}")
+                    if single_pass:
+                        return True
+                    time.sleep(interval)
+                    continue
+                
+                for tweet in filtered_tweets:
+                    try:
+                        tweet_id = str(tweet.id)
+                        author_id = str(tweet.author_id)
+                        
+                        # Skip if we've already processed this tweet
+                        if tweet_id in self.processed_tweets:
+                            continue
+                        
+                        # Get author information
+                        author = self.client.get_user(id=author_id)
+                        if not hasattr(author, 'data') or not author.data:
+                            logger.warning(f"Could not fetch author information for tweet {tweet_id}")
+                            continue
+                        
+                        username = author.data.username
+                        logger.info(f"Processing tweet {tweet_id} from @{username}")
+                    except AttributeError as e:
+                        logger.error(f"Error accessing tweet attributes: {e}", exc_info=True)
+                        continue
+                    except Exception as e:
+                        logger.error(f"Unexpected error processing tweet: {e}", exc_info=True)
                         continue
                     
-                    for tweet in filtered_tweets:
-                        try:
-                            tweet_id = str(tweet.id)
-                            author_id = str(tweet.author_id)
-                            
-                            # Skip if we've already processed this tweet
-                            if tweet_id in self.processed_tweets:
-                                continue
-                            
-                            # Get author information
-                            author = self.client.get_user(id=author_id)
-                            if not hasattr(author, 'data') or not author.data:
-                                logger.warning(f"Could not fetch author information for tweet {tweet_id}")
-                                continue
-                            
-                            username = author.data.username
-                            logger.info(f"Processing tweet {tweet_id} from @{username}")
-                        except AttributeError as e:
-                            logger.error(f"Error accessing tweet attributes: {e}", exc_info=True)
-                            continue
-                        except Exception as e:
-                            logger.error(f"Unexpected error processing tweet: {e}", exc_info=True)
-                            continue
-                        
-                        # Check if we can reply to this user today
-                        if self.can_reply_to_user(author_id):
-                            logger.info(f"New tweet from @{username}: {tweet.text[:50]}...")
-                            if self._reply_to_tweet(tweet_id, author_id, username, tweet.text):
-                                self.processed_tweets.add(tweet_id)
-                        
-                    # Prevent processed_tweets from growing too large
-                    if len(self.processed_tweets) > 1000:
-                        self.processed_tweets = set(list(self.processed_tweets)[-1000:])
-                        
-                    time.sleep(interval)
+                    # Check if we can reply to this user today
+                    if self.can_reply_to_user(author_id):
+                        logger.info(f"New tweet from @{username}: {tweet.text[:50]}...")
+                        if self._reply_to_tweet(tweet_id, author_id, username, tweet.text):
+                            self.processed_tweets.add(tweet_id)
                     
-                except tweepy.TooManyRequests as e:
-                    reset_time = int(e.response.headers.get('x-rate-limit-reset', 900))
-                    current_time = int(datetime.now(timezone.utc).timestamp())
-                    sleep_time = max(reset_time - current_time, 60)
-                    logger.warning(f"Rate limit exceeded. Waiting {sleep_time} seconds...")
+                # Prevent processed_tweets from growing too large
+                if len(self.processed_tweets) > 1000:
+                    self.processed_tweets = set(list(self.processed_tweets)[-1000:])
+                    
+                if single_pass:
+                    return True
+                    
+                time.sleep(interval)
+                
+            except tweepy.TooManyRequests as e:
+                reset_time = int(e.response.headers.get('x-rate-limit-reset', 900))
+                current_time = int(datetime.now(timezone.utc).timestamp())
+                sleep_time = max(reset_time - current_time, 60)
+                logger.warning(f"Rate limit exceeded for list {list_id}. Waiting {sleep_time} seconds...")
+                time.sleep(sleep_time)
+                if single_pass:
+                    return False
+                continue
+                
+            except tweepy.TwitterServerError as e:
+                logger.error(f"Twitter server error for list {list_id}: {e}", exc_info=True)
+                logger.info("Waiting 60 seconds before retry...")
+                time.sleep(60)
+                if single_pass:
+                    return False
+                continue
+                
+            except Exception as e:
+                logger.error(f"Error processing tweets from list {list_id}: {e}", exc_info=True)
+                logger.info("Waiting 30 seconds before retry...")
+                time.sleep(30)
+                if single_pass:
+                    return False
+                continue
+                
+        return True
+
+    def monitor_multiple_lists(self, list_ids: list[str], interval: int = 90):
+        """
+        Monitor multiple Twitter lists sequentially
+        Args:
+            list_ids (list[str]): List of Twitter list IDs to monitor
+            interval (int): Time between full cycles of checking all lists (default: 90s)
+        Returns:
+            bool: True if monitoring started successfully, False otherwise
+        """
+        if not list_ids:
+            logger.error("No list IDs provided")
+            return False
+            
+        logger.info(f"Starting to monitor {len(list_ids)} lists: {', '.join(list_ids)}")
+        logger.info(f"Monitoring interval: {interval} seconds")
+        
+        # Calculate per-list parameters
+        num_lists = len(list_ids)
+        per_list_interval = 0  # No delay between lists
+        per_list_max_results = max(5, min(10 // num_lists, 10))  # Adjust max_results based on list count
+        
+        try:
+            while True:
+                cycle_start = datetime.now(timezone.utc)
+                logger.info(f"Starting new monitoring cycle at {cycle_start}")
+                
+                for list_id in list_ids:
+                    self.monitor_list_tweets(
+                        list_id,
+                        interval=per_list_interval,
+                        max_results=per_list_max_results,
+                        single_pass=True
+                    )
+                
+                # Calculate remaining time in the interval
+                cycle_duration = (datetime.now(timezone.utc) - cycle_start).total_seconds()
+                sleep_time = max(0, interval - cycle_duration)
+                
+                if sleep_time > 0:
+                    logger.info(f"Cycle completed in {cycle_duration:.1f}s, sleeping for {sleep_time:.1f}s")
                     time.sleep(sleep_time)
-                    continue
-                    
-                except tweepy.TwitterServerError as e:
-                    logger.error(f"Twitter server error: {e}", exc_info=True)
-                    logger.info("Waiting 60 seconds before retry...")
-                    time.sleep(60)
-                    continue
-                    
-                except Exception as e:
-                    logger.error(f"Error processing tweets: {e}", exc_info=True)
-                    logger.info("Waiting 30 seconds before retry...")
-                    time.sleep(30)
-                    continue
                     
         except KeyboardInterrupt:
             logger.info("Monitoring stopped by user")

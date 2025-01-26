@@ -25,13 +25,13 @@ def run_bot_with_restart():
         try:
             logger.info(f"=== Starting bot at {datetime.now()} ===")
             bot = TwitterBot()
-            list_id = '1872292999155040454'
+            list_ids = ['1872292999155040454', '1882727258596450791']
             logger.info('Twitter bot with GPT-4 integration initialized')
-            logger.info(f'Monitoring list: {list_id}')
+            logger.info(f'Monitoring lists: {", ".join(list_ids)}')
             logger.info(f'Maximum replies per user per day: {bot.max_daily_replies}')
             
             # Main monitoring loop
-            bot.monitor_list_tweets(list_id)
+            bot.monitor_multiple_lists(list_ids)
             
         except KeyboardInterrupt:
             logger.info("Received keyboard interrupt. Shutting down gracefully...")
