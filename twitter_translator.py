@@ -5,7 +5,6 @@ import os
 import logging
 import time
 from typing import Optional
-from openai.types.error import APIError, RateLimitError
 
 # Set up logging
 logging.basicConfig(
@@ -21,6 +20,11 @@ class TwitterTranslator:
         logging.info(f"Monitoring tweets for user: @{self.target_username}")
         
         try:
+            # Set up Twitter API v1.1 authentication
+            auth = tweepy.OAuthHandler(api_key, api_secret)
+            auth.set_access_token(access_token, access_token_secret)
+            self.api = tweepy.API(auth, wait_on_rate_limit=True)
+            
             # Create Client for v2 endpoints
             self.client = tweepy.Client(
                 bearer_token=bearer_token,
@@ -30,7 +34,7 @@ class TwitterTranslator:
                 access_token_secret=access_token_secret,
                 wait_on_rate_limit=True
             )
-            logging.info("Twitter API client initialized")
+            logging.info("Twitter API clients initialized")
             
             # Get user ID from username using v2 endpoint
             user = self.client.get_user(username=self.target_username)
@@ -64,15 +68,16 @@ class TwitterTranslator:
                 translation = response.choices[0].message.content
                 logging.info("Translation completed successfully")
                 return translation
-            except RateLimitError:
-                wait_time = (attempt + 1) * 5  # Exponential backoff
-                logging.warning(f"Rate limit hit, waiting {wait_time} seconds...")
-                await asyncio.sleep(wait_time)
-            except APIError as e:
-                logging.error(f"OpenAI API error: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(2)
-                continue
+            except Exception as e:
+                if "rate_limit" in str(e).lower():
+                    wait_time = (attempt + 1) * 5  # Exponential backoff
+                    logging.warning(f"Rate limit hit, waiting {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                elif "api" in str(e).lower():
+                    logging.error(f"OpenAI API error: {e}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2)
+                    continue
             except Exception as e:
                 logging.error(f"Translation error: {str(e)}")
                 if attempt < max_retries - 1:
@@ -86,26 +91,40 @@ class TwitterTranslator:
         """Process a single tweet - get it and translate if it's in Chinese."""
         try:
             # Get tweet with its text
-            tweet = self.client.get_tweet(tweet_id, tweet_fields=['text'])
+            tweet = self.client.get_tweet(tweet_id, tweet_fields=['text', 'author_id'])
             if tweet and tweet.data:
                 tweet_text = tweet.data.text
                 # Check if tweet is in Chinese (simplified or traditional)
                 if any('\u4e00' <= char <= '\u9fff' for char in tweet_text):
-                    print(f"Found Chinese tweet: {tweet_text}")
+                    logging.info("Processing Chinese tweet for translation")
                     translation = await self.translate_text(tweet_text)
                     if translation:
-                        print(f"Translation: {translation}")
-                        # Reply to the tweet with the translation
-                        response = self.client.create_tweet(
-                            text=f"English translation:\n{translation}",
-                            in_reply_to_tweet_id=tweet_id
-                        )
-                        if response.data:
-                            print(f"Successfully replied to tweet {tweet_id}")
-                        else:
-                            print(f"Failed to reply to tweet {tweet_id}")
+                        logging.info("Preparing to post translation reply")
+                        try:
+                            # Reply to the tweet using v1.1 API
+                            reply_text = f"English translation:\n{translation}"
+                            try:
+                                # Verify credentials first
+                                me = self.api.verify_credentials()
+                                logging.info(f"Authenticated as: @{me.screen_name}")
+                                
+                                # Post the reply
+                                status = self.api.update_status(
+                                    status=reply_text,
+                                    in_reply_to_status_id=tweet_id,
+                                    auto_populate_reply_metadata=True
+                                )
+                                logging.info(f"Successfully posted translation reply to tweet {tweet_id}")
+                            except tweepy.errors.Unauthorized as auth_error:
+                                logging.error(f"Authentication failed: {str(auth_error)}")
+                                raise
+                            except tweepy.errors.TweepyException as tweepy_error:
+                                logging.error(f"Twitter API error: {str(tweepy_error)}")
+                                raise
+                        except Exception as reply_error:
+                            logging.error(f"Failed to post reply: {str(reply_error)}")
         except Exception as e:
-            print(f"Error processing tweet {tweet_id}: {str(e)}")
+            logging.error(f"Error processing tweet {tweet_id}: {str(e)}")
 
 class TweetMonitor:
     def __init__(self, translator: TwitterTranslator, client: tweepy.Client, poll_interval: int = 60):
