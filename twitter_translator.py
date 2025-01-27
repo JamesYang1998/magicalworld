@@ -135,24 +135,27 @@ class TwitterTranslator:
                     logging.warning("2. Verify Read and Write permissions are granted")
                     logging.warning("3. Confirm Access Token has correct permissions")
                     
-                    # Test write permissions
+                    # Test write permissions with a test tweet
                     logging.info("Testing write permissions...")
                     try:
-                        test_tweets = self.client.get_users_tweets(
-                            me['data']['id'],
-                            max_results=1,
-                            tweet_fields=['author_id']
+                        test_tweet = self.user_client.create_tweet(
+                            text="Testing write permissions... (This tweet will be deleted)",
+                            user_auth=True
                         )
-                        if test_tweets and ('data' in test_tweets or 'meta' in test_tweets):
-                            logging.info("Write permissions verified")
+                        if test_tweet and hasattr(test_tweet, 'data'):
+                            tweet_id = test_tweet.data['id']
+                            logging.info("Write permissions test successful")
+                            # Delete the test tweet
+                            self.user_client.delete_tweet(tweet_id, user_auth=True)
+                            self.user_auth_working = True
                         else:
                             logging.warning("Could not verify write permissions - response format unexpected")
                     except Exception as write_error:
                         logging.warning(f"Write permissions test failed: {str(write_error)}")
                         logging.warning("This may indicate insufficient API access level")
                         logging.warning("Error details: " + str(write_error))
-                else:
-                    raise tweepy.errors.Unauthorized("Failed to get user info - OAuth 1.0a authentication failed")
+                        self.user_auth_working = False
+                
             except tweepy.errors.Unauthorized as auth_error:
                 logging.error(f"Authentication failed with error: {str(auth_error)}")
                 logging.error("Please verify your Twitter API credentials and access level (Elevated access required)")
@@ -162,19 +165,26 @@ class TwitterTranslator:
                 logging.error(f"  API secret present: {bool(api_secret)}")
                 logging.error(f"  Access token present: {bool(access_token)}")
                 logging.error(f"  Access token secret present: {bool(access_token_secret)}")
-                raise
+                self.user_auth_working = False
             except Exception as auth_error:
                 logging.error(f"Authentication test failed with unexpected error: {str(auth_error)}")
                 logging.error("Please check your Twitter Developer Portal for API status and permissions")
-                raise
+                self.user_auth_working = False
             
-            # Get user ID from username using v2 endpoint
-            user = self.client.get_user(username=self.target_username)
-            if user and 'data' in user:
-                self.target_user_id = user['data']['id']
-                logging.info(f"Successfully found target user @{self.target_username}")
-            else:
+            # Get user ID from username using v2 endpoint with better error handling
+            try:
+                user_response = self.app_client.get_user(username=self.target_username)
+                if user_response and hasattr(user_response, 'data'):
+                    self.target_user_id = user_response.data.id
+                    logging.info(f"Successfully found target user @{self.target_username} with ID: {self.target_user_id}")
+                else:
+                    raise ValueError(f"Could not find user @{self.target_username}")
+            except tweepy.errors.NotFound:
+                logging.error(f"User @{self.target_username} not found")
                 raise ValueError(f"Could not find user @{self.target_username}")
+            except Exception as e:
+                logging.error(f"Error finding target user: {str(e)}")
+                raise ValueError(f"Error accessing user @{self.target_username}: {str(e)}")
                 
             # Initialize OpenAI client
             self.openai_client = AsyncOpenAI(api_key=openai_api_key)
@@ -236,10 +246,9 @@ class TwitterTranslator:
             last_error = None
             for attempt in range(max_retries):
                 try:
-                    tweet = self.client.get_tweet(
+                    tweet = self.translator.app_client.get_tweet(
                         tweet_id,
-                        tweet_fields=['text', 'author_id', 'conversation_id'],
-                        user_auth=True
+                        tweet_fields=['text', 'author_id', 'conversation_id']
                     )
                     if tweet and 'data' in tweet:
                         break
@@ -265,13 +274,18 @@ class TwitterTranslator:
                 
             self.request_timestamps.append(time.time())
             
-            if tweet and 'data' in tweet:
-                tweet_text = tweet['data']['text']
+            if tweet and isinstance(tweet, dict) and 'data' in tweet:
+                tweet_data = tweet['data']
+                tweet_text = tweet_data.get('text', '')
+                
                 # Check if tweet is in Chinese (simplified or traditional)
                 if any('\u4e00' <= char <= '\u9fff' for char in tweet_text):
                     logging.info(f"Processing Chinese tweet (ID: {tweet_id})")
+                    logging.info(f"Original text: {tweet_text}")
+                    
                     translation = await self.translate_text(tweet_text)
                     if translation:
+                        logging.info(f"Translation: {translation}")
                         logging.info("Preparing to post translation reply")
                         max_retries = 3
                         retry_delay = 1
@@ -366,29 +380,39 @@ class TweetMonitor:
         """Process new tweets from the user."""
         try:
             # Get user's tweets
-            tweets = self.client.get_users_tweets(
+            tweets = self.translator.app_client.get_users_tweets(
                 self.translator.target_user_id,
                 tweet_fields=['text', 'referenced_tweets'],
                 max_results=5,  # Limit to recent tweets
                 since_id=self.last_tweet_id
             )
             
-            if not tweets.data:
+            if not tweets or not isinstance(tweets, dict) or 'data' not in tweets:
+                logging.debug("No new tweets found")
                 return
             
+            tweet_list = tweets['data']
+            if not tweet_list:
+                return
+                
             # Update last tweet ID
-            self.last_tweet_id = tweets.data[0].id
+            self.last_tweet_id = tweet_list[0]['id']
             
-            for tweet in reversed(tweets.data):  # Process older tweets first
+            for tweet in reversed(tweet_list):  # Process older tweets first
                 # Skip replies and retweets
-                if hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets:
+                if 'referenced_tweets' in tweet:
                     logging.debug("Skipping retweet or reply")
                     continue
                 
+                tweet_text = tweet.get('text', '')
                 # Check for Chinese characters
-                if any('\u4e00' <= char <= '\u9fff' for char in tweet.text):
-                    logging.info("Found tweet containing Chinese text")
-                    await self.translator.process_tweet(tweet.id)
+                if any('\u4e00' <= char <= '\u9fff' for char in tweet_text):
+                    logging.info(f"Found tweet containing Chinese text: {tweet['id']}")
+                    try:
+                        await self.translator.process_tweet(tweet['id'])
+                    except Exception as e:
+                        logging.error(f"Error processing tweet {tweet['id']}: {str(e)}")
+                        continue
                 
         except Exception as e:
             logging.error(f"Error processing tweets: {str(e)}")
