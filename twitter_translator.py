@@ -7,6 +7,9 @@ from typing import Optional
 class TwitterTranslator:
     def __init__(self, bearer_token: str, consumer_key: str, consumer_secret: str, 
                  access_token: str, access_token_secret: str, openai_api_key: str, target_username: str):
+        # Clean username format (remove @ and any other special characters)
+        clean_username = target_username.replace("@", "").split("_")[0]
+        
         # Read-only client for fetching tweets
         self.client = tweepy.Client(
             bearer_token=bearer_token,
@@ -16,9 +19,9 @@ class TwitterTranslator:
             access_token_secret=access_token_secret
         )
         # Get user ID from username
-        user = self.client.get_user(username=target_username)
+        user = self.client.get_user(username=clean_username)
         self.target_user_id = user.data.id
-        self.target_username = target_username
+        self.target_username = clean_username
         openai.api_key = openai_api_key
         
     async def translate_text(self, text: str) -> Optional[str]:
