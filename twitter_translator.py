@@ -2,32 +2,49 @@ import tweepy
 import openai
 import asyncio
 import os
+import logging
 from typing import Optional
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 class TwitterTranslator:
     def __init__(self, bearer_token: str, api_key: str, api_secret: str, 
                  access_token: str, access_token_secret: str, openai_api_key: str, target_username: str):
         # Clean username format (remove @ and any other special characters)
-        clean_username = target_username.replace("@", "").split("_")[0]
+        self.target_username = target_username.replace("@", "").strip()
+        logging.info(f"Initializing TwitterTranslator for user: {self.target_username}")
         
-        # Create Client for v2 endpoints
-        self.client = tweepy.Client(
-            bearer_token=bearer_token,
-            consumer_key=api_key,
-            consumer_secret=api_secret,
-            access_token=access_token,
-            access_token_secret=access_token_secret
-        )
-        
-        # Get user ID from username using v2 endpoint
-        user = self.client.get_user(username=clean_username)
-        if user.data:
-            self.target_user_id = user.data.id
-            self.target_username = clean_username
-        else:
-            raise ValueError(f"Could not find user with username: {clean_username}")
+        try:
+            # Create Client for v2 endpoints
+            self.client = tweepy.Client(
+                bearer_token=bearer_token,
+                consumer_key=api_key,
+                consumer_secret=api_secret,
+                access_token=access_token,
+                access_token_secret=access_token_secret,
+                wait_on_rate_limit=True
+            )
+            logging.info("Twitter client initialized successfully")
             
-        openai.api_key = openai_api_key
+            # Get user ID from username using v2 endpoint
+            user = self.client.get_user(username=self.target_username)
+            if user.data:
+                self.target_user_id = user.data.id
+                logging.info(f"Found user ID: {self.target_user_id}")
+            else:
+                raise ValueError(f"Could not find user with username: {self.target_username}")
+                
+            # Set OpenAI API key
+            openai.api_key = openai_api_key
+            logging.info("OpenAI API key configured")
+            
+        except Exception as e:
+            logging.error(f"Error initializing TwitterTranslator: {str(e)}")
+            raise
         
     async def translate_text(self, text: str) -> Optional[str]:
         """Translate Chinese text to English using OpenAI's GPT model."""
@@ -79,9 +96,16 @@ class TweetStream(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         """Called when a tweet is received."""
-        # Only process tweets from our target user
-        if tweet.author_id == self.translator.target_user_id:
-            self.loop.create_task(self.translator.process_tweet(tweet.id))
+        try:
+            logging.info(f"Received tweet: {tweet.data}")
+            # Only process tweets from our target user
+            if tweet.author_id == self.translator.target_user_id:
+                logging.info(f"Processing tweet from target user: {tweet.id}")
+                self.loop.create_task(self.translator.process_tweet(tweet.id))
+            else:
+                logging.debug(f"Ignoring tweet from non-target user: {tweet.author_id}")
+        except Exception as e:
+            logging.error(f"Error in on_tweet: {str(e)}")
 
 def main():
     # Get credentials from environment variables
@@ -93,10 +117,20 @@ def main():
     TARGET_USERNAME = os.getenv("Username")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Will use default OpenAI key from environment
     
-    if not all([TWITTER_API_KEY, TWITTER_API_SECRET,
-                TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET,
-                TARGET_USERNAME]):
-        raise ValueError("Missing required Twitter credentials or username")
+    required_vars = {
+        "Bearer Token": TWITTER_BEARER_TOKEN,
+        "API Key": TWITTER_API_KEY,
+        "API Secret": TWITTER_API_SECRET,
+        "Access Token": TWITTER_ACCESS_TOKEN,
+        "Access Token Secret": TWITTER_ACCESS_TOKEN_SECRET,
+        "Username": TARGET_USERNAME
+    }
+    
+    missing_vars = [k for k, v in required_vars.items() if not v]
+    if missing_vars:
+        raise ValueError(f"Missing required credentials: {', '.join(missing_vars)}")
+    
+    logging.info("All required credentials found")
     
     if not OPENAI_API_KEY:
         print("Warning: No OpenAI API key found, translations may not work")
@@ -116,8 +150,18 @@ def main():
     
     try:
         print(f"Starting stream to monitor tweets from @{TARGET_USERNAME}")
-        # Filter for tweets from the target user
-        stream.filter(follow=[str(translator.target_user_id)])
+        # Set up filter rule for the target user
+        # First, delete any existing rules
+        rules = stream.get_rules()
+        if rules and rules.data:
+            rule_ids = [rule.id for rule in rules.data]
+            stream.delete_rules(rule_ids)
+        
+        # Add new rule to follow target user
+        stream.add_rules(tweepy.StreamRule(f"from:{translator.target_username}"))
+        
+        # Start filtering
+        stream.filter(tweet_fields=["author_id", "text"])
     except KeyboardInterrupt:
         print("\nStopping stream...")
         stream.disconnect()
