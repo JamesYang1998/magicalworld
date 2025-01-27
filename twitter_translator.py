@@ -158,7 +158,7 @@ class TwitterTranslator:
         logging.error("Max retries reached for translation")
         return None
 
-    async def process_tweet(self, tweet_id: str):
+    async def process_tweet(self, tweet_id: str, max_retries: int = 3):
         """Process a single tweet - get it and translate if it's in Chinese."""
         try:
             # Check rate limits
@@ -170,12 +170,38 @@ class TwitterTranslator:
                 logging.warning(f"Rate limit approaching, waiting {wait_time:.2f} seconds")
                 await asyncio.sleep(wait_time)
             
-            # Get tweet with its text using user authentication
-            tweet = self.client.get_tweet(
-                tweet_id,
-                tweet_fields=['text', 'author_id', 'conversation_id'],
-                user_auth=True
-            )
+            # Get tweet with exponential backoff retry
+            tweet = None
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    tweet = self.client.get_tweet(
+                        tweet_id,
+                        tweet_fields=['text', 'author_id', 'conversation_id'],
+                        user_auth=True
+                    )
+                    if tweet and 'data' in tweet:
+                        break
+                except tweepy.errors.TooManyRequests as e:
+                    wait_time = 2 ** attempt
+                    logging.warning(f"Rate limit hit, waiting {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                    last_error = e
+                except tweepy.errors.Unauthorized as e:
+                    logging.error("Authentication error while fetching tweet")
+                    raise
+                except Exception as e:
+                    wait_time = 2 ** attempt
+                    logging.warning(f"Error fetching tweet (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(wait_time)
+                    last_error = e
+            
+            if not tweet:
+                if last_error:
+                    raise last_error
+                raise Exception("Failed to fetch tweet after retries")
+                
             self.request_timestamps.append(time.time())
             
             if tweet and 'data' in tweet:
@@ -195,10 +221,30 @@ class TwitterTranslator:
                                 reply_text = f"English translation:\n{translation}"
                                 
                                 # Post the reply using v2 endpoint
-                                response = self.client.create_tweet(
-                                    text=reply_text,
-                                    in_reply_to_tweet_id=tweet_id
-                                )
+                                # Post reply with exponential backoff retry
+                                response = None
+                                for reply_attempt in range(max_retries):
+                                    try:
+                                        response = self.client.create_tweet(
+                                            text=reply_text,
+                                            in_reply_to_tweet_id=tweet_id
+                                        )
+                                        if response and 'data' in response:
+                                            break
+                                    except tweepy.errors.TooManyRequests:
+                                        wait_time = 2 ** reply_attempt
+                                        logging.warning(f"Rate limit hit while posting reply, waiting {wait_time} seconds...")
+                                        await asyncio.sleep(wait_time)
+                                    except tweepy.errors.Unauthorized:
+                                        logging.error("Authentication error while posting reply")
+                                        raise
+                                    except Exception as reply_error:
+                                        wait_time = 2 ** reply_attempt
+                                        logging.warning(f"Error posting reply (attempt {reply_attempt + 1}/{max_retries}): {str(reply_error)}")
+                                        if reply_attempt < max_retries - 1:
+                                            await asyncio.sleep(wait_time)
+                                        else:
+                                            raise
                                 
                                 if response and 'data' in response:
                                     reply_id = response['data']['id']
