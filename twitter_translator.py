@@ -367,7 +367,7 @@ class TwitterTranslator:
             logging.error(f"Error processing tweet {tweet_id}: {str(e)}")
 
 class TweetMonitor:
-    def __init__(self, translator: TwitterTranslator, client: tweepy.Client, poll_interval: int = 60):
+    def __init__(self, translator: TwitterTranslator, client: tweepy.Client, poll_interval: int = 30):
         self.translator = translator
         self.client = client
         self.poll_interval = poll_interval
@@ -375,6 +375,7 @@ class TweetMonitor:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.running = True
+        self.check_count = 0  # Counter for monitoring activity
 
     async def process_new_tweets(self):
         """Process new tweets from the user."""
@@ -428,6 +429,9 @@ class TweetMonitor:
         while self.running:
             try:
                 await self.process_new_tweets()
+                self.check_count += 1
+                if self.check_count % 10 == 0:  # Log status every 10 checks
+                    logging.info(f"Monitor active - completed {self.check_count} checks")
                 await asyncio.sleep(self.poll_interval)
             except Exception as e:
                 logging.error(f"Error in monitor loop: {str(e)}")
