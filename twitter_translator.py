@@ -20,12 +20,7 @@ class TwitterTranslator:
         logging.info(f"Monitoring tweets for user: @{self.target_username}")
         
         try:
-            # Set up Twitter API v1.1 authentication
-            auth = tweepy.OAuthHandler(api_key, api_secret)
-            auth.set_access_token(access_token, access_token_secret)
-            self.api = tweepy.API(auth, wait_on_rate_limit=True)
-            
-            # Create Client for v2 endpoints
+            # Create Client for v2 endpoints with write permissions
             self.client = tweepy.Client(
                 bearer_token=bearer_token,
                 consumer_key=api_key,
@@ -101,20 +96,25 @@ class TwitterTranslator:
                     if translation:
                         logging.info("Preparing to post translation reply")
                         try:
-                            # Reply to the tweet using v1.1 API
+                            # Reply to the tweet using v2 API
                             reply_text = f"English translation:\n{translation}"
                             try:
-                                # Verify credentials first
-                                me = self.api.verify_credentials()
-                                logging.info(f"Authenticated as: @{me.screen_name}")
-                                
-                                # Post the reply
-                                status = self.api.update_status(
-                                    status=reply_text,
-                                    in_reply_to_status_id=tweet_id,
-                                    auto_populate_reply_metadata=True
-                                )
-                                logging.info(f"Successfully posted translation reply to tweet {tweet_id}")
+                                # Get authenticated user info
+                                me = self.client.get_me()
+                                if me.data:
+                                    logging.info(f"Authenticated as: @{me.data.username}")
+                                    
+                                    # Post the reply using v2 endpoint
+                                    response = self.client.create_tweet(
+                                        text=reply_text,
+                                        in_reply_to_tweet_id=tweet_id
+                                    )
+                                    if response.data:
+                                        logging.info(f"Successfully posted translation reply to tweet {tweet_id}")
+                                    else:
+                                        logging.error("Failed to create reply tweet - no response data")
+                                else:
+                                    logging.error("Failed to get authenticated user info")
                             except tweepy.errors.Unauthorized as auth_error:
                                 logging.error(f"Authentication failed: {str(auth_error)}")
                                 raise
