@@ -1,10 +1,11 @@
 import tweepy
-import openai
+from openai import AsyncOpenAI
 import asyncio
 import os
 import logging
 import time
 from typing import Optional
+from openai.types.error import APIError, RateLimitError
 
 # Set up logging
 logging.basicConfig(
@@ -39,8 +40,8 @@ class TwitterTranslator:
             else:
                 raise ValueError(f"Could not find user @{self.target_username}")
                 
-            # Set OpenAI API key
-            openai.api_key = openai_api_key
+            # Initialize OpenAI client
+            self.openai_client = AsyncOpenAI(api_key=openai_api_key)
             logging.info("Translation service configured")
             
         except Exception as e:
@@ -52,29 +53,31 @@ class TwitterTranslator:
         for attempt in range(max_retries):
             try:
                 logging.info(f"Attempting translation (attempt {attempt + 1}/{max_retries})")
-                response = await openai.ChatCompletion.acreate(
+                response = await self.openai_client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": "You are a professional translator. Translate the following Chinese text to English. Maintain the original meaning and tone."},
                         {"role": "user", "content": text}
                     ],
-                    temperature=0.3,  # Lower temperature for more consistent translations
-                    timeout=30  # Set timeout to 30 seconds
+                    temperature=0.3  # Lower temperature for more consistent translations
                 )
                 translation = response.choices[0].message.content
-                logging.info(f"Translation successful: {translation}")
+                logging.info("Translation completed successfully")
                 return translation
-            except openai.error.RateLimitError:
+            except RateLimitError:
                 wait_time = (attempt + 1) * 5  # Exponential backoff
                 logging.warning(f"Rate limit hit, waiting {wait_time} seconds...")
                 await asyncio.sleep(wait_time)
-            except openai.error.APIError as e:
+            except APIError as e:
                 logging.error(f"OpenAI API error: {e}")
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2)
                 continue
             except Exception as e:
-                logging.error(f"Translation error: {e}")
+                logging.error(f"Translation error: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2)
+                    continue
                 return None
         logging.error("Max retries reached for translation")
         return None
