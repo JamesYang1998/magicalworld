@@ -40,36 +40,47 @@ class TwitterTranslator:
             
             # Test authentication and get user info
             try:
-                # Initialize API v1.1 for OAuth 1.0a authentication
-                auth = tweepy.OAuthHandler(api_key, api_secret)
-                auth.set_access_token(access_token, access_token_secret)
-                api = tweepy.API(auth)
+                logging.info("Initializing Twitter API v2 client...")
                 
-                # Test user authentication with v1.1 API first
-                logging.info("Testing user authentication with v1.1 API...")
-                try:
-                    user_v1 = api.verify_credentials()
-                    if user_v1:
-                        logging.info(f"V1.1 API authentication successful as @{user_v1.screen_name}")
-                except Exception as v1_error:
-                    logging.warning(f"V1.1 API authentication failed: {str(v1_error)}")
+                # Log credential format for debugging (without exposing actual values)
+                logging.info("Checking credential formats:")
+                logging.info(f"Bearer token length: {len(bearer_token) if bearer_token else 0}")
+                logging.info(f"API key length: {len(api_key) if api_key else 0}")
+                logging.info(f"API secret length: {len(api_secret) if api_secret else 0}")
+                logging.info(f"Access token length: {len(access_token) if access_token else 0}")
+                logging.info(f"Access token secret length: {len(access_token_secret) if access_token_secret else 0}")
                 
-                # Now test v2 API authentication
-                logging.info("Testing v2 API authentication...")
-                me = self.client.get_me(user_auth=True)
+                # Initialize client with OAuth 2.0 App-Only authentication first
+                logging.info("Testing OAuth 2.0 App-Only authentication...")
+                app_client = tweepy.Client(bearer_token=bearer_token)
+                test_user = app_client.get_user(username="twitter")
+                if test_user and 'data' in test_user:
+                    logging.info("OAuth 2.0 App-Only authentication successful")
+                
+                # Now test OAuth 1.0a User Context authentication
+                logging.info("Testing OAuth 1.0a User Context authentication...")
+                oauth1_client = tweepy.Client(
+                    consumer_key=api_key,
+                    consumer_secret=api_secret,
+                    access_token=access_token,
+                    access_token_secret=access_token_secret
+                )
+                
+                me = oauth1_client.get_me()
                 if me and 'data' in me:
                     auth_username = me['data']['username']
-                    logging.info(f"V2 API authentication successful as @{auth_username}")
+                    logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
+                    
+                    # Store the authenticated client
+                    self.client = oauth1_client
                     
                     # Test write permissions
                     logging.info("Testing write permissions...")
                     try:
-                        # Try to get authenticated user's tweets
                         test_tweets = self.client.get_users_tweets(
                             me['data']['id'],
                             max_results=1,
-                            tweet_fields=['author_id'],
-                            user_auth=True  # Explicitly use user authentication
+                            tweet_fields=['author_id']
                         )
                         if test_tweets and ('data' in test_tweets or 'meta' in test_tweets):
                             logging.info("Write permissions verified")
@@ -78,8 +89,9 @@ class TwitterTranslator:
                     except Exception as write_error:
                         logging.warning(f"Write permissions test failed: {str(write_error)}")
                         logging.warning("This may indicate insufficient API access level")
+                        logging.warning("Error details: " + str(write_error))
                 else:
-                    raise tweepy.errors.Unauthorized("Failed to get user info - v2 authentication failed")
+                    raise tweepy.errors.Unauthorized("Failed to get user info - OAuth 1.0a authentication failed")
             except tweepy.errors.Unauthorized as auth_error:
                 logging.error(f"Authentication failed with error: {str(auth_error)}")
                 logging.error("Please verify your Twitter API credentials and access level (Elevated access required)")
