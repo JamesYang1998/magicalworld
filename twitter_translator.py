@@ -17,7 +17,7 @@ class TwitterTranslator:
                  access_token: str, access_token_secret: str, openai_api_key: str, target_username: str):
         # Clean username format (remove @ and any other special characters)
         self.target_username = target_username.replace("@", "").strip()
-        logging.info(f"Initializing TwitterTranslator for user: {self.target_username}")
+        logging.info(f"Monitoring tweets for user: @{self.target_username}")
         
         try:
             # Create Client for v2 endpoints
@@ -29,19 +29,19 @@ class TwitterTranslator:
                 access_token_secret=access_token_secret,
                 wait_on_rate_limit=True
             )
-            logging.info("Twitter client initialized successfully")
+            logging.info("Twitter API client initialized")
             
             # Get user ID from username using v2 endpoint
             user = self.client.get_user(username=self.target_username)
             if user.data:
                 self.target_user_id = user.data.id
-                logging.info(f"Found user ID: {self.target_user_id}")
+                logging.info(f"Successfully found target user")
             else:
-                raise ValueError(f"Could not find user with username: {self.target_username}")
+                raise ValueError(f"Could not find user @{self.target_username}")
                 
             # Set OpenAI API key
             openai.api_key = openai_api_key
-            logging.info("OpenAI API key configured")
+            logging.info("Translation service configured")
             
         except Exception as e:
             logging.error(f"Error initializing TwitterTranslator: {str(e)}")
@@ -134,11 +134,12 @@ class TweetMonitor:
             for tweet in reversed(tweets.data):  # Process older tweets first
                 # Skip replies and retweets
                 if hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets:
+                    logging.debug("Skipping retweet or reply")
                     continue
                 
                 # Check for Chinese characters
                 if any('\u4e00' <= char <= '\u9fff' for char in tweet.text):
-                    logging.info(f"Found Chinese tweet: {tweet.text}")
+                    logging.info("Found tweet containing Chinese text")
                     await self.translator.process_tweet(tweet.id)
                 
         except Exception as e:
@@ -175,7 +176,8 @@ async def main():
         "API Secret": TWITTER_API_SECRET,
         "Access Token": TWITTER_ACCESS_TOKEN,
         "Access Token Secret": TWITTER_ACCESS_TOKEN_SECRET,
-        "Username": TARGET_USERNAME
+        "Username": TARGET_USERNAME,
+        "OpenAI API Key": OPENAI_API_KEY
     }
     
     missing_vars = [k for k, v in required_vars.items() if not v]
@@ -183,22 +185,6 @@ async def main():
         raise ValueError(f"Missing required credentials: {', '.join(missing_vars)}")
     
     logging.info("All required credentials found")
-    
-    if not OPENAI_API_KEY:
-        print("Warning: No OpenAI API key found, translations may not work")
-
-    translator = TwitterTranslator(
-        TWITTER_BEARER_TOKEN,
-        TWITTER_API_KEY,
-        TWITTER_API_SECRET,
-        TWITTER_ACCESS_TOKEN,
-        TWITTER_ACCESS_TOKEN_SECRET,
-        OPENAI_API_KEY,
-        TARGET_USERNAME
-    )
-    
-    # Initialize stream with bearer token
-    stream = TweetStream(TWITTER_BEARER_TOKEN, translator)
     
     try:
         # Initialize Twitter client with API v2
