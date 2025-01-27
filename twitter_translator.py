@@ -5,22 +5,29 @@ import os
 from typing import Optional
 
 class TwitterTranslator:
-    def __init__(self, bearer_token: str, consumer_key: str, consumer_secret: str, 
+    def __init__(self, api_key: str, api_secret: str, 
                  access_token: str, access_token_secret: str, openai_api_key: str, target_username: str):
         # Clean username format (remove @ and any other special characters)
         clean_username = target_username.replace("@", "").split("_")[0]
         
-        # Read-only client for fetching tweets
+        # Initialize Twitter API v1.1 authentication
+        auth = tweepy.OAuthHandler(api_key, api_secret)
+        auth.set_access_token(access_token, access_token_secret)
+        
+        # Create API object for v1.1 endpoints
+        self.api = tweepy.API(auth)
+        
+        # Create Client for v2 endpoints
         self.client = tweepy.Client(
-            bearer_token=bearer_token,
-            consumer_key=consumer_key,
-            consumer_secret=consumer_secret,
+            consumer_key=api_key,
+            consumer_secret=api_secret,
             access_token=access_token,
             access_token_secret=access_token_secret
         )
+        
         # Get user ID from username
-        user = self.client.get_user(username=clean_username)
-        self.target_user_id = user.data.id
+        user = self.api.get_user(screen_name=clean_username)
+        self.target_user_id = user.id
         self.target_username = clean_username
         openai.api_key = openai_api_key
         
@@ -68,23 +75,22 @@ class TweetStream(tweepy.StreamingClient):
 
 def main():
     # Get credentials from environment variables
-    TWITTER_BEARER_TOKEN = os.getenv("TwitterAPIbearertoken")
-    TWITTER_API_KEY = TWITTER_BEARER_TOKEN  # Using bearer token as API key
-    TWITTER_API_SECRET = ""  # Not needed when using bearer token
+    TWITTER_API_KEY = os.getenv("TwitterAPIKEY")
+    TWITTER_API_SECRET = os.getenv("TwitterAPISecKEY")
     TWITTER_ACCESS_TOKEN = os.getenv("TwitterAPIAccesstoken")
     TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TwitterAPIAccesstokensecret")
     TARGET_USERNAME = os.getenv("Username")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Will use default OpenAI key from environment
     
-    if not all([TWITTER_BEARER_TOKEN, TWITTER_ACCESS_TOKEN,
-                TWITTER_ACCESS_TOKEN_SECRET, TARGET_USERNAME]):
+    if not all([TWITTER_API_KEY, TWITTER_API_SECRET,
+                TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET,
+                TARGET_USERNAME]):
         raise ValueError("Missing required Twitter credentials or username")
     
     if not OPENAI_API_KEY:
         print("Warning: No OpenAI API key found, translations may not work")
 
     translator = TwitterTranslator(
-        TWITTER_BEARER_TOKEN,
         TWITTER_API_KEY,
         TWITTER_API_SECRET,
         TWITTER_ACCESS_TOKEN,
