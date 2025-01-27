@@ -408,11 +408,15 @@ class TweetMonitor:
                 # Check for Chinese characters
                 if any('\u4e00' <= char <= '\u9fff' for char in tweet_text):
                     logging.info(f"Found tweet containing Chinese text: {tweet['id']}")
+                    logging.info(f"Tweet text: {tweet_text}")
                     try:
                         await self.translator.process_tweet(tweet['id'])
                     except Exception as e:
                         logging.error(f"Error processing tweet {tweet['id']}: {str(e)}")
+                        logging.error(f"Full error details: {repr(e)}")
                         continue
+                else:
+                    logging.debug(f"Tweet {tweet['id']} does not contain Chinese text")
                 
         except Exception as e:
             logging.error(f"Error processing tweets: {str(e)}")
