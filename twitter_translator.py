@@ -4,6 +4,7 @@ import asyncio
 import os
 import logging
 import time
+from datetime import datetime
 from typing import Optional
 
 # Set up logging
@@ -19,6 +20,11 @@ class TwitterTranslator:
         self.target_username = target_username.replace("@", "").strip()
         logging.info(f"Monitoring tweets for user: @{self.target_username}")
         
+        # Initialize rate limiting parameters
+        self.rate_limit_window = 15 * 60  # 15 minutes in seconds
+        self.max_requests = 50  # Maximum requests per window
+        self.request_timestamps = []
+        
         try:
             # Create Client for v2 endpoints with write permissions
             self.client = tweepy.Client(
@@ -27,15 +33,27 @@ class TwitterTranslator:
                 consumer_secret=api_secret,
                 access_token=access_token,
                 access_token_secret=access_token_secret,
-                wait_on_rate_limit=True
+                wait_on_rate_limit=True,
+                return_type=dict  # For better error handling
             )
             logging.info("Twitter API clients initialized")
             
+            # Test authentication and get user info
+            try:
+                me = self.client.get_me()
+                if me and 'data' in me:
+                    logging.info(f"Successfully authenticated as @{me['data']['username']}")
+                else:
+                    raise tweepy.errors.Unauthorized("Failed to get user info")
+            except Exception as auth_error:
+                logging.error(f"Authentication test failed: {str(auth_error)}")
+                raise
+            
             # Get user ID from username using v2 endpoint
             user = self.client.get_user(username=self.target_username)
-            if user.data:
-                self.target_user_id = user.data.id
-                logging.info(f"Successfully found target user")
+            if user and 'data' in user:
+                self.target_user_id = user['data']['id']
+                logging.info(f"Successfully found target user @{self.target_username}")
             else:
                 raise ValueError(f"Could not find user @{self.target_username}")
                 
@@ -85,44 +103,74 @@ class TwitterTranslator:
     async def process_tweet(self, tweet_id: str):
         """Process a single tweet - get it and translate if it's in Chinese."""
         try:
+            # Check rate limits
+            current_time = time.time()
+            self.request_timestamps = [ts for ts in self.request_timestamps 
+                                    if current_time - ts < self.rate_limit_window]
+            if len(self.request_timestamps) >= self.max_requests:
+                wait_time = self.rate_limit_window - (current_time - self.request_timestamps[0])
+                logging.warning(f"Rate limit approaching, waiting {wait_time:.2f} seconds")
+                await asyncio.sleep(wait_time)
+            
             # Get tweet with its text
-            tweet = self.client.get_tweet(tweet_id, tweet_fields=['text', 'author_id'])
-            if tweet and tweet.data:
-                tweet_text = tweet.data.text
+            tweet = self.client.get_tweet(tweet_id, tweet_fields=['text', 'author_id', 'conversation_id'])
+            self.request_timestamps.append(time.time())
+            
+            if tweet and 'data' in tweet:
+                tweet_text = tweet['data']['text']
                 # Check if tweet is in Chinese (simplified or traditional)
                 if any('\u4e00' <= char <= '\u9fff' for char in tweet_text):
-                    logging.info("Processing Chinese tweet for translation")
+                    logging.info(f"Processing Chinese tweet (ID: {tweet_id})")
                     translation = await self.translate_text(tweet_text)
                     if translation:
                         logging.info("Preparing to post translation reply")
-                        try:
-                            # Reply to the tweet using v2 API
-                            reply_text = f"English translation:\n{translation}"
+                        max_retries = 3
+                        retry_delay = 1
+                        
+                        for attempt in range(max_retries):
                             try:
-                                # Get authenticated user info
-                                me = self.client.get_me()
-                                if me.data:
-                                    logging.info(f"Authenticated as: @{me.data.username}")
-                                    
-                                    # Post the reply using v2 endpoint
-                                    response = self.client.create_tweet(
-                                        text=reply_text,
-                                        in_reply_to_tweet_id=tweet_id
-                                    )
-                                    if response.data:
-                                        logging.info(f"Successfully posted translation reply to tweet {tweet_id}")
-                                    else:
-                                        logging.error("Failed to create reply tweet - no response data")
+                                # Reply to the tweet using v2 API
+                                reply_text = f"English translation:\n{translation}"
+                                
+                                # Post the reply using v2 endpoint
+                                response = self.client.create_tweet(
+                                    text=reply_text,
+                                    in_reply_to_tweet_id=tweet_id
+                                )
+                                
+                                if response and 'data' in response:
+                                    reply_id = response['data']['id']
+                                    logging.info(f"Successfully posted translation reply (ID: {reply_id}) to tweet {tweet_id}")
+                                    break
                                 else:
-                                    logging.error("Failed to get authenticated user info")
+                                    logging.error("Failed to create reply tweet - no response data")
+                                    
+                            except tweepy.errors.TooManyRequests as rate_error:
+                                if attempt < max_retries - 1:
+                                    wait_time = retry_delay * (2 ** attempt)
+                                    logging.warning(f"Rate limit hit, waiting {wait_time} seconds...")
+                                    await asyncio.sleep(wait_time)
+                                else:
+                                    logging.error("Max retries reached for rate limit")
+                                    raise
+                                    
                             except tweepy.errors.Unauthorized as auth_error:
                                 logging.error(f"Authentication failed: {str(auth_error)}")
                                 raise
-                            except tweepy.errors.TweepyException as tweepy_error:
-                                logging.error(f"Twitter API error: {str(tweepy_error)}")
+                                
+                            except tweepy.errors.BadRequest as bad_request:
+                                logging.error(f"Bad request error: {str(bad_request)}")
                                 raise
-                        except Exception as reply_error:
-                            logging.error(f"Failed to post reply: {str(reply_error)}")
+                                
+                            except Exception as e:
+                                if attempt < max_retries - 1:
+                                    wait_time = retry_delay * (2 ** attempt)
+                                    logging.warning(f"Error posting reply, retrying in {wait_time} seconds: {str(e)}")
+                                    await asyncio.sleep(wait_time)
+                                else:
+                                    logging.error(f"Failed to post reply after {max_retries} attempts: {str(e)}")
+                                    raise
+                                    
         except Exception as e:
             logging.error(f"Error processing tweet {tweet_id}: {str(e)}")
 
