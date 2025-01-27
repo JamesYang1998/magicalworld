@@ -104,69 +104,59 @@ class TwitterTranslator:
         except Exception as e:
             print(f"Error processing tweet {tweet_id}: {str(e)}")
 
-class TweetStream(tweepy.StreamingClient):
-    def __init__(self, bearer_token: str, translator: TwitterTranslator, max_retries: int = 3):
-        super().__init__(bearer_token, wait_on_rate_limit=True)
+class TweetMonitor:
+    def __init__(self, translator: TwitterTranslator, client: tweepy.Client, poll_interval: int = 60):
         self.translator = translator
+        self.client = client
+        self.poll_interval = poll_interval
+        self.last_tweet_id = None
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.max_retries = max_retries
-        self.retry_count = 0
         self.running = True
 
-    def on_tweet(self, tweet):
-        """Called when a tweet is received."""
+    async def process_new_tweets(self):
+        """Process new tweets from the user."""
         try:
-            if not hasattr(tweet, 'data') or not tweet.data:
-                logging.debug("Received tweet without data, skipping")
-                return
-                
-            logging.info(f"Received tweet: {tweet.data}")
+            # Get user's tweets
+            tweets = self.client.get_users_tweets(
+                self.translator.target_user_id,
+                tweet_fields=['text', 'referenced_tweets'],
+                max_results=5,  # Limit to recent tweets
+                since_id=self.last_tweet_id
+            )
             
-            # Only process tweets from our target user
-            if tweet.data.author_id == self.translator.target_user_id:
-                logging.info(f"Processing tweet from target user: {tweet.data.id}")
-                # Check if it's a retweet or reply
-                if hasattr(tweet.data, 'referenced_tweets') and tweet.data.referenced_tweets:
-                    logging.info("Skipping retweet or reply")
-                    return
-                    
-                self.loop.create_task(self.translator.process_tweet(tweet.data.id))
-            else:
-                logging.debug(f"Ignoring tweet from non-target user: {tweet.data.author_id}")
+            if not tweets.data:
+                return
+            
+            # Update last tweet ID
+            self.last_tweet_id = tweets.data[0].id
+            
+            for tweet in reversed(tweets.data):  # Process older tweets first
+                # Skip replies and retweets
+                if hasattr(tweet, 'referenced_tweets') and tweet.referenced_tweets:
+                    continue
+                
+                # Check for Chinese characters
+                if any('\u4e00' <= char <= '\u9fff' for char in tweet.text):
+                    logging.info(f"Found Chinese tweet: {tweet.text}")
+                    await self.translator.process_tweet(tweet.id)
+                
         except Exception as e:
-            logging.error(f"Error in on_tweet: {str(e)}")
-            # Don't let exceptions break the stream
-            pass
+            logging.error(f"Error processing tweets: {str(e)}")
 
-    def on_connection_error(self):
-        """Called when stream connection encounters an error."""
-        self.retry_count += 1
-        wait_time = min(self.retry_count * 5, 320)  # Exponential backoff with max 320s
-        logging.warning(f"Stream connection error, attempt {self.retry_count}/{self.max_retries}")
+    async def run(self):
+        """Run the tweet monitor."""
+        logging.info(f"Starting tweet monitor for user @{self.translator.target_username}")
         
-        if self.retry_count <= self.max_retries:
-            logging.info(f"Waiting {wait_time} seconds before reconnecting...")
-            time.sleep(wait_time)
-            return True  # Retry connection
-        else:
-            logging.error("Max retries reached, stopping stream")
-            self.running = False
-            return False  # Stop retrying
+        while self.running:
+            try:
+                await self.process_new_tweets()
+                await asyncio.sleep(self.poll_interval)
+            except Exception as e:
+                logging.error(f"Error in monitor loop: {str(e)}")
+                await asyncio.sleep(self.poll_interval)  # Wait before retrying
 
-    def on_errors(self, errors):
-        """Called when stream encounters HTTP errors."""
-        logging.error(f"Stream errors: {errors}")
-        return True  # Keep stream running
-
-    def on_closed(self, resp):
-        """Called when Twitter closes the stream."""
-        logging.warning(f"Stream closed by Twitter: {resp}")
-        if self.running:
-            return self.on_connection_error()
-        return False
-
-def main():
+async def main():
     # Get credentials from environment variables
     TWITTER_BEARER_TOKEN = os.getenv("TwitterAPIbearertoken")
     TWITTER_API_KEY = os.getenv("TwitterAPIKEY")
@@ -211,36 +201,30 @@ def main():
     stream = TweetStream(TWITTER_BEARER_TOKEN, translator)
     
     try:
-        print(f"Starting stream to monitor tweets from @{TARGET_USERNAME}")
-        logging.info("Setting up stream rules...")
+        # Initialize Twitter client with API v2
+        client = tweepy.Client(
+            bearer_token=TWITTER_BEARER_TOKEN,
+            consumer_key=TWITTER_API_KEY,
+            consumer_secret=TWITTER_API_SECRET,
+            access_token=TWITTER_ACCESS_TOKEN,
+            access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
+            wait_on_rate_limit=True
+        )
         
-        # Set up filter rule for the target user
-        try:
-            # First, delete any existing rules
-            rules = stream.get_rules()
-            if rules and rules.data:
-                rule_ids = [rule.id for rule in rules.data]
-                stream.delete_rules(rule_ids)
-                logging.info("Deleted existing stream rules")
-            
-            # Add new rule to follow target user
-            rule = tweepy.StreamRule(f"from:{translator.target_username}")
-            result = stream.add_rules(rule)
-            if result and result.data:
-                logging.info(f"Added stream rule: {result.data[0].value}")
-            else:
-                raise ValueError("Failed to add stream rule")
-            
-            # Start filtering with expanded tweet information
-            logging.info("Starting filtered stream...")
-            stream.filter(
-                tweet_fields=["author_id", "text", "referenced_tweets"],
-                expansions=["referenced_tweets.id"],
-                threaded=True
-            )
-        except Exception as e:
-            logging.error(f"Error in stream setup: {str(e)}")
-            raise
+        # Initialize translator
+        translator = TwitterTranslator(
+            TWITTER_BEARER_TOKEN,
+            TWITTER_API_KEY,
+            TWITTER_API_SECRET,
+            TWITTER_ACCESS_TOKEN,
+            TWITTER_ACCESS_TOKEN_SECRET,
+            OPENAI_API_KEY,
+            TARGET_USERNAME
+        )
+        
+        # Initialize and run tweet monitor
+        monitor = TweetMonitor(translator, client)
+        await monitor.run()
     except KeyboardInterrupt:
         print("\nStopping stream...")
         stream.disconnect()
@@ -249,4 +233,4 @@ def main():
         stream.disconnect()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
