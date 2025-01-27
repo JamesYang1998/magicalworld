@@ -16,7 +16,7 @@ class AIServiceError(Exception):
 class AIService:
     def __init__(self):
         # Load API keys from environment variables
-        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.openai_api_key = os.getenv("openainew", "")
         self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
         
         # Validate API keys
