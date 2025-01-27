@@ -61,21 +61,22 @@ class TwitterTranslator:
                         in_reply_to_tweet_id=tweet_id
                     )
 
-class TweetStream(tweepy.Stream):
-    def __init__(self, api_key: str, api_secret: str, access_token: str, access_token_secret: str, translator: TwitterTranslator):
-        super().__init__(api_key, api_secret, access_token, access_token_secret)
+class TweetStream(tweepy.StreamingClient):
+    def __init__(self, bearer_token: str, translator: TwitterTranslator):
+        super().__init__(bearer_token)
         self.translator = translator
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-    def on_status(self, status):
+    def on_tweet(self, tweet):
         """Called when a tweet is received."""
         # Only process tweets from our target user
-        if status.user.id == self.translator.target_user_id:
-            self.loop.create_task(self.translator.process_tweet(status.id))
+        if tweet.author_id == self.translator.target_user_id:
+            self.loop.create_task(self.translator.process_tweet(tweet.id))
 
 def main():
     # Get credentials from environment variables
+    TWITTER_BEARER_TOKEN = os.getenv("TwitterAPIbearertoken")
     TWITTER_API_KEY = os.getenv("TwitterAPIKEY")
     TWITTER_API_SECRET = os.getenv("TwitterAPISecKEY")
     TWITTER_ACCESS_TOKEN = os.getenv("TwitterAPIAccesstoken")
@@ -100,14 +101,8 @@ def main():
         TARGET_USERNAME
     )
     
-    # Initialize stream with API credentials
-    stream = TweetStream(
-        TWITTER_API_KEY,
-        TWITTER_API_SECRET,
-        TWITTER_ACCESS_TOKEN,
-        TWITTER_ACCESS_TOKEN_SECRET,
-        translator
-    )
+    # Initialize stream with bearer token
+    stream = TweetStream(TWITTER_BEARER_TOKEN, translator)
     
     try:
         print(f"Starting stream to monitor tweets from @{TARGET_USERNAME}")
