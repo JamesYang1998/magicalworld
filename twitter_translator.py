@@ -61,17 +61,18 @@ class TwitterTranslator:
                         in_reply_to_tweet_id=tweet_id
                     )
 
-class TweetStream(tweepy.StreamingClient):
-    def __init__(self, bearer_token: str, translator: TwitterTranslator):
-        super().__init__(bearer_token)
+class TweetStream(tweepy.Stream):
+    def __init__(self, api_key: str, api_secret: str, access_token: str, access_token_secret: str, translator: TwitterTranslator):
+        super().__init__(api_key, api_secret, access_token, access_token_secret)
         self.translator = translator
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
-    def on_tweet(self, tweet):
+    def on_status(self, status):
         """Called when a tweet is received."""
         # Only process tweets from our target user
-        if tweet.author_id == self.translator.target_user_id:
-            self.loop.create_task(self.translator.process_tweet(tweet.id))
+        if status.user.id == self.translator.target_user_id:
+            self.loop.create_task(self.translator.process_tweet(status.id))
 
 def main():
     # Get credentials from environment variables
@@ -99,10 +100,25 @@ def main():
         TARGET_USERNAME
     )
     
-    stream = TweetStream(TWITTER_BEARER_TOKEN, translator)
+    # Initialize stream with API credentials
+    stream = TweetStream(
+        TWITTER_API_KEY,
+        TWITTER_API_SECRET,
+        TWITTER_ACCESS_TOKEN,
+        TWITTER_ACCESS_TOKEN_SECRET,
+        translator
+    )
     
-    # Filter for tweets from the target user
-    stream.filter(follow=[translator.target_user_id])
+    try:
+        print(f"Starting stream to monitor tweets from @{TARGET_USERNAME}")
+        # Filter for tweets from the target user
+        stream.filter(follow=[str(translator.target_user_id)])
+    except KeyboardInterrupt:
+        print("\nStopping stream...")
+        stream.disconnect()
+    except Exception as e:
+        print(f"Error: {e}")
+        stream.disconnect()
 
 if __name__ == "__main__":
     main()
