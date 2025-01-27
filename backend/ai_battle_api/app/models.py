@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from enum import Enum
+from sqlalchemy import Column, String, JSON
+from .database import Base
 
 class AIProvider(str, Enum):
     OPENAI = "openai"
@@ -26,6 +28,38 @@ class Battle(BaseModel):
     winner: Optional[str] = None
     status: str = "in_progress"
     scores: Optional[dict] = None
+
+class BattleSQL(Base):
+    """SQLAlchemy model for storing battles in the database"""
+    __tablename__ = "battles"
+
+    id = Column(String, primary_key=True)
+    messages = Column(JSON)  # Store messages as JSON
+    winner = Column(String, nullable=True)
+    status = Column(String, default="in_progress")
+    scores = Column(JSON, nullable=True)  # Store scores as JSON
+
+    def to_pydantic(self) -> Battle:
+        """Convert SQLAlchemy model to Pydantic model"""
+        messages = [Message(**msg) for msg in self.messages]
+        return Battle(
+            id=self.id,
+            messages=messages,
+            winner=self.winner,
+            status=self.status,
+            scores=self.scores
+        )
+
+    @classmethod
+    def from_pydantic(cls, battle: Battle) -> "BattleSQL":
+        """Create SQLAlchemy model from Pydantic model"""
+        return cls(
+            id=battle.id,
+            messages=[msg.dict() for msg in battle.messages],
+            winner=battle.winner,
+            status=battle.status,
+            scores=battle.scores
+        )
 
 class BattleCreate(BaseModel):
     topic: str  # The topic or context for the battle

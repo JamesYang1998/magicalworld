@@ -5,7 +5,9 @@ from pathlib import Path
 
 def create_image(prompt: str, filename: str):
     """Generate an image using DALL-E and save it"""
-    api_key = os.getenv("OpenAIAPI")
+    api_key = os.getenv("Openainew", "")
+    if not api_key:
+        raise Exception("OpenAI API key not found in environment variables")
     
     headers = {
         "Content-Type": "application/json",

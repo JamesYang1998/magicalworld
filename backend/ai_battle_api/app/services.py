@@ -4,7 +4,12 @@ import uuid
 import aiohttp
 import logging
 import tweepy
-from .models import Message, Battle, AIProvider
+from sqlalchemy.exc import SQLAlchemyError
+from .models import Message, Battle, AIProvider, BattleSQL
+from .database import SessionLocal
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -137,26 +142,39 @@ class BattleService:
     def __init__(self):
         self.ai_service = AIService()
         self.twitter_service = TwitterService()
-        self.battles: dict[str, Battle] = {}
-        self.battle_votes: dict[str, BattleVotes] = {}
+        self.battle_votes: dict[str, BattleVotes] = {}  # TODO: Move to database in future iteration
         
     def create_battle(self, topic: str, rounds: int) -> Battle:
+        """Create a new battle and store it in the database"""
         battle_id = str(uuid.uuid4())
         initial_message = Message(
             role="system",
             content=f"You are participating in a verbal battle about: {topic}. Be competitive but respectful. Rounds: {rounds}"
         )
         battle = Battle(id=battle_id, messages=[initial_message])
-        self.battles[battle_id] = battle
-        return battle
+        
+        # Create SQLAlchemy model and save to database
+        try:
+            with SessionLocal() as db:
+                battle_sql = BattleSQL.from_pydantic(battle)
+                db.add(battle_sql)
+                db.commit()
+                db.refresh(battle_sql)
+                return battle
+        except SQLAlchemyError as e:
+            logger.error(f"Database error creating battle: {str(e)}")
+            raise
         
     async def process_round(self, battle_id: str) -> Optional[Battle]:
-        battle = self.battles.get(battle_id)
-        if not battle:
-            logger.warning(f"Battle {battle_id} not found")
-            return None
-            
+        """Process a battle round, updating the battle state in the database"""
         try:
+            with SessionLocal() as db:
+                battle_sql = db.query(BattleSQL).filter(BattleSQL.id == battle_id).first()
+                if not battle_sql:
+                    logger.warning(f"Battle {battle_id} not found")
+                    return None
+                battle = battle_sql.to_pydantic()
+            
             logger.info(f"Processing round for battle {battle_id}")
             
             # Get responses from both AIs
@@ -212,7 +230,16 @@ class BattleService:
                 
                 logger.info(f"Battle {battle_id} completed. Winner: {battle.winner} (OpenAI: {openai_score}, DeepSeek: {deepseek_score})")
             
-            return battle
+            # Update battle in database
+            try:
+                battle_sql = BattleSQL.from_pydantic(battle)
+                db.merge(battle_sql)
+                db.commit()
+                return battle
+            except SQLAlchemyError as e:
+                logger.error(f"Database error updating battle: {str(e)}")
+                db.rollback()
+                raise
             
         except AIServiceError as e:
             logger.error(f"Error processing round for battle {battle_id}: {str(e)}")

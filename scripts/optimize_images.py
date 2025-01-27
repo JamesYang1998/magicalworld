@@ -15,7 +15,8 @@ def optimize_images(directory):
                 print(f"Optimized {filename}")
 
 def main():
-    base_dir = Path("../frontend/ai_battle_frontend/public/assets/characters")
+    script_dir = Path(__file__).resolve().parent
+    base_dir = script_dir.parent / "frontend" / "ai_battle_frontend" / "public" / "assets" / "characters"
     optimize_images(base_dir / "openai")
     optimize_images(base_dir / "deepseek")
 
