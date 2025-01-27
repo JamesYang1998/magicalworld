@@ -40,27 +40,36 @@ class TwitterTranslator:
             
             # Test authentication and get user info
             try:
-                # Test app-only authentication with a simple API call
-                logging.info("Testing app-only authentication...")
-                test_user = self.client.get_user(username="twitter")
-                if test_user and 'data' in test_user:
-                    logging.info("App-only authentication successful")
+                # Initialize API v1.1 for OAuth 1.0a authentication
+                auth = tweepy.OAuthHandler(api_key, api_secret)
+                auth.set_access_token(access_token, access_token_secret)
+                api = tweepy.API(auth)
                 
-                # Test user authentication
-                logging.info("Testing user context authentication...")
-                me = self.client.get_me()
+                # Test user authentication with v1.1 API first
+                logging.info("Testing user authentication with v1.1 API...")
+                try:
+                    user_v1 = api.verify_credentials()
+                    if user_v1:
+                        logging.info(f"V1.1 API authentication successful as @{user_v1.screen_name}")
+                except Exception as v1_error:
+                    logging.warning(f"V1.1 API authentication failed: {str(v1_error)}")
+                
+                # Now test v2 API authentication
+                logging.info("Testing v2 API authentication...")
+                me = self.client.get_me(user_auth=True)
                 if me and 'data' in me:
                     auth_username = me['data']['username']
-                    logging.info(f"Successfully authenticated as @{auth_username}")
+                    logging.info(f"V2 API authentication successful as @{auth_username}")
                     
-                    # Test write permissions with a simple API call
+                    # Test write permissions
                     logging.info("Testing write permissions...")
                     try:
-                        # Try to get authenticated user's tweets as a write permission test
+                        # Try to get authenticated user's tweets
                         test_tweets = self.client.get_users_tweets(
                             me['data']['id'],
                             max_results=1,
-                            tweet_fields=['author_id']
+                            tweet_fields=['author_id'],
+                            user_auth=True  # Explicitly use user authentication
                         )
                         if test_tweets and ('data' in test_tweets or 'meta' in test_tweets):
                             logging.info("Write permissions verified")
@@ -70,7 +79,7 @@ class TwitterTranslator:
                         logging.warning(f"Write permissions test failed: {str(write_error)}")
                         logging.warning("This may indicate insufficient API access level")
                 else:
-                    raise tweepy.errors.Unauthorized("Failed to get user info - authentication failed")
+                    raise tweepy.errors.Unauthorized("Failed to get user info - v2 authentication failed")
             except tweepy.errors.Unauthorized as auth_error:
                 logging.error(f"Authentication failed with error: {str(auth_error)}")
                 logging.error("Please verify your Twitter API credentials and access level (Elevated access required)")
@@ -149,8 +158,12 @@ class TwitterTranslator:
                 logging.warning(f"Rate limit approaching, waiting {wait_time:.2f} seconds")
                 await asyncio.sleep(wait_time)
             
-            # Get tweet with its text
-            tweet = self.client.get_tweet(tweet_id, tweet_fields=['text', 'author_id', 'conversation_id'])
+            # Get tweet with its text using user authentication
+            tweet = self.client.get_tweet(
+                tweet_id,
+                tweet_fields=['text', 'author_id', 'conversation_id'],
+                user_auth=True
+            )
             self.request_timestamps.append(time.time())
             
             if tweet and 'data' in tweet:
