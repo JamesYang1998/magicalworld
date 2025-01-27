@@ -40,7 +40,7 @@ class TwitterTranslator:
             
             # Test authentication and get user info
             try:
-                logging.info("Initializing Twitter API v2 client...")
+                logging.info("Initializing Twitter API v2 clients...")
                 
                 # Log credential format for debugging (without exposing actual values)
                 logging.info("Checking credential formats:")
@@ -50,29 +50,40 @@ class TwitterTranslator:
                 logging.info(f"Access token length: {len(access_token) if access_token else 0}")
                 logging.info(f"Access token secret length: {len(access_token_secret) if access_token_secret else 0}")
                 
-                # Initialize client with OAuth 2.0 App-Only authentication first
-                logging.info("Testing OAuth 2.0 App-Only authentication...")
-                app_client = tweepy.Client(bearer_token=bearer_token)
-                test_user = app_client.get_user(username="twitter")
+                # Initialize client with OAuth 2.0 App-Only authentication
+                logging.info("Setting up OAuth 2.0 App-Only authentication...")
+                self.app_client = tweepy.Client(bearer_token=bearer_token)
+                test_user = self.app_client.get_user(username="twitter")
                 if test_user and 'data' in test_user:
                     logging.info("OAuth 2.0 App-Only authentication successful")
+                else:
+                    raise tweepy.errors.Unauthorized("App-Only authentication failed")
                 
-                # Now test OAuth 1.0a User Context authentication
-                logging.info("Testing OAuth 1.0a User Context authentication...")
-                oauth1_client = tweepy.Client(
+                # Set up OAuth 1.0a User Context authentication for write operations
+                logging.info("Setting up OAuth 1.0a User Context authentication...")
+                self.user_client = tweepy.Client(
                     consumer_key=api_key,
                     consumer_secret=api_secret,
                     access_token=access_token,
                     access_token_secret=access_token_secret
                 )
                 
-                me = oauth1_client.get_me()
-                if me and 'data' in me:
-                    auth_username = me['data']['username']
-                    logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
-                    
-                    # Store the authenticated client
-                    self.client = oauth1_client
+                # Store the app client as the default client for read operations
+                self.client = self.app_client
+                
+                # Test user authentication but don't fail if it doesn't work
+                try:
+                    me = self.user_client.get_me()
+                    if me and 'data' in me:
+                        auth_username = me['data']['username']
+                        logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
+                        self.user_auth_working = True
+                    else:
+                        logging.warning("OAuth 1.0a authentication response format unexpected")
+                        self.user_auth_working = False
+                except Exception as e:
+                    logging.warning(f"OAuth 1.0a authentication not working: {str(e)}")
+                    self.user_auth_working = False
                     
                     # Test write permissions
                     logging.info("Testing write permissions...")
@@ -221,30 +232,39 @@ class TwitterTranslator:
                                 reply_text = f"English translation:\n{translation}"
                                 
                                 # Post the reply using v2 endpoint
-                                # Post reply with exponential backoff retry
+                                # Check if user authentication is working before attempting to reply
+                                if not self.user_auth_working:
+                                    logging.warning("Cannot post reply: User authentication not working")
+                                    logging.warning("Please check Twitter Developer Portal settings and update credentials")
+                                    return
+                                
+                                # Post reply with exponential backoff retry using user client
                                 response = None
                                 for reply_attempt in range(max_retries):
                                     try:
-                                        response = self.client.create_tweet(
+                                        response = self.user_client.create_tweet(
                                             text=reply_text,
                                             in_reply_to_tweet_id=tweet_id
                                         )
                                         if response and 'data' in response:
+                                            logging.info(f"Successfully posted reply to tweet {tweet_id}")
                                             break
                                     except tweepy.errors.TooManyRequests:
                                         wait_time = 2 ** reply_attempt
                                         logging.warning(f"Rate limit hit while posting reply, waiting {wait_time} seconds...")
                                         await asyncio.sleep(wait_time)
                                     except tweepy.errors.Unauthorized:
-                                        logging.error("Authentication error while posting reply")
-                                        raise
+                                        logging.error("Authentication error while posting reply - please check Twitter Developer Portal settings")
+                                        self.user_auth_working = False
+                                        return
                                     except Exception as reply_error:
                                         wait_time = 2 ** reply_attempt
                                         logging.warning(f"Error posting reply (attempt {reply_attempt + 1}/{max_retries}): {str(reply_error)}")
                                         if reply_attempt < max_retries - 1:
                                             await asyncio.sleep(wait_time)
                                         else:
-                                            raise
+                                            logging.error("Failed to post reply after all retries")
+                                            return
                                 
                                 if response and 'data' in response:
                                     reply_id = response['data']['id']
