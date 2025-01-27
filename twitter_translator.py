@@ -40,32 +40,49 @@ class TwitterTranslator:
             
             # Test authentication and get user info
             try:
-                # First try to get app-only authentication status
+                # Test app-only authentication with a simple API call
                 logging.info("Testing app-only authentication...")
-                app_status = self.client.get_oauth2_app_auth_status()
-                if app_status:
+                test_user = self.client.get_user(username="twitter")
+                if test_user and 'data' in test_user:
                     logging.info("App-only authentication successful")
                 
-                # Then try user context authentication
+                # Test user authentication
                 logging.info("Testing user context authentication...")
-                me = self.client.get_me(user_auth=True)
+                me = self.client.get_me()
                 if me and 'data' in me:
-                    logging.info(f"Successfully authenticated as @{me['data']['username']}")
-                    logging.info("Checking write permissions...")
-                    # Try to verify write permissions by getting user's tweets
-                    test_tweets = self.client.get_users_tweets(me['data']['id'], max_results=1)
-                    if test_tweets:
-                        logging.info("Write permissions verified")
-                    else:
-                        logging.warning("Could not verify write permissions")
+                    auth_username = me['data']['username']
+                    logging.info(f"Successfully authenticated as @{auth_username}")
+                    
+                    # Test write permissions with a simple API call
+                    logging.info("Testing write permissions...")
+                    try:
+                        # Try to get authenticated user's tweets as a write permission test
+                        test_tweets = self.client.get_users_tweets(
+                            me['data']['id'],
+                            max_results=1,
+                            tweet_fields=['author_id']
+                        )
+                        if test_tweets and ('data' in test_tweets or 'meta' in test_tweets):
+                            logging.info("Write permissions verified")
+                        else:
+                            logging.warning("Could not verify write permissions - response format unexpected")
+                    except Exception as write_error:
+                        logging.warning(f"Write permissions test failed: {str(write_error)}")
+                        logging.warning("This may indicate insufficient API access level")
                 else:
-                    raise tweepy.errors.Unauthorized("Failed to get user info")
+                    raise tweepy.errors.Unauthorized("Failed to get user info - authentication failed")
             except tweepy.errors.Unauthorized as auth_error:
                 logging.error(f"Authentication failed with error: {str(auth_error)}")
                 logging.error("Please verify your Twitter API credentials and access level (Elevated access required)")
+                logging.error("Current credentials status:")
+                logging.error(f"  Bearer token present: {bool(bearer_token)}")
+                logging.error(f"  API key present: {bool(api_key)}")
+                logging.error(f"  API secret present: {bool(api_secret)}")
+                logging.error(f"  Access token present: {bool(access_token)}")
+                logging.error(f"  Access token secret present: {bool(access_token_secret)}")
                 raise
             except Exception as auth_error:
-                logging.error(f"Authentication test failed: {str(auth_error)}")
+                logging.error(f"Authentication test failed with unexpected error: {str(auth_error)}")
                 logging.error("Please check your Twitter Developer Portal for API status and permissions")
                 raise
             
