@@ -56,18 +56,22 @@ class TwitterTranslator:
                 
                 # Test app-only authentication with error handling
                 try:
-                    # Use a simpler test query
-                    test_response = self.app_client.search_recent_tweets(query="test", max_results=1)
+                    # Test authentication with a simple user lookup instead
+                    test_response = self.app_client.get_user(username=self.target_username)
                     logging.debug(f"App-Only auth test response type: {type(test_response)}")
                     
                     if test_response is not None:
                         logging.info("OAuth 2.0 App-Only authentication successful")
-                        if hasattr(test_response, 'data'):
-                            logging.debug("Response has 'data' attribute")
-                        if hasattr(test_response, 'meta'):
-                            logging.debug("Response has 'meta' attribute")
-                        if hasattr(test_response, 'includes'):
-                            logging.debug("Response has 'includes' attribute")
+                        if isinstance(test_response, dict):
+                            if 'data' in test_response:
+                                logging.debug("Response has 'data' field")
+                                logging.info(f"Successfully verified access to user @{self.target_username}")
+                            if 'meta' in test_response:
+                                logging.debug("Response has 'meta' field")
+                        else:
+                            if hasattr(test_response, 'data'):
+                                logging.debug("Response has 'data' attribute")
+                                logging.info(f"Successfully verified access to user @{self.target_username}")
                     else:
                         raise tweepy.errors.TweepyException("Empty response from Twitter API")
                 except tweepy.errors.Unauthorized as e:
