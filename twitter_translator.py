@@ -56,14 +56,36 @@ class TwitterTranslator:
                 
                 # Test app-only authentication with error handling
                 try:
-                    test_user = self.app_client.get_user(username="twitter")
-                    if test_user and hasattr(test_user, 'data') and test_user.data:
+                    # Use a simpler test query
+                    test_response = self.app_client.search_recent_tweets(query="test", max_results=1)
+                    logging.debug(f"App-Only auth test response type: {type(test_response)}")
+                    
+                    if test_response is not None:
                         logging.info("OAuth 2.0 App-Only authentication successful")
+                        if hasattr(test_response, 'data'):
+                            logging.debug("Response has 'data' attribute")
+                        if hasattr(test_response, 'meta'):
+                            logging.debug("Response has 'meta' attribute")
+                        if hasattr(test_response, 'includes'):
+                            logging.debug("Response has 'includes' attribute")
                     else:
-                        raise tweepy.errors.TweepyException("App-Only authentication response format unexpected")
+                        raise tweepy.errors.TweepyException("Empty response from Twitter API")
+                except tweepy.errors.Unauthorized as e:
+                    logging.error(f"App-Only authentication unauthorized: {str(e)}")
+                    logging.error("Please verify your Bearer Token is valid and has the correct permissions")
+                    raise
+                except tweepy.errors.TooManyRequests as e:
+                    logging.error(f"Rate limit exceeded during authentication test: {str(e)}")
+                    logging.error("Please wait a few minutes and try again")
+                    raise
+                except tweepy.errors.TweepyException as e:
+                    logging.error(f"App-Only authentication failed with TweepyException: {str(e)}")
+                    logging.error("Please check your Twitter Developer Portal settings")
+                    raise
                 except Exception as e:
-                    logging.error(f"App-Only authentication failed: {str(e)}")
-                    raise tweepy.errors.TweepyException(f"App-Only authentication failed: {str(e)}")
+                    logging.error(f"App-Only authentication failed with unexpected error: {str(e)}")
+                    logging.error("Please verify all credentials and API access levels")
+                    raise tweepy.errors.TweepyException(f"Unexpected error during authentication: {str(e)}")
                 
                 # Set up OAuth 1.0a User Context authentication for write operations
                 logging.info("Setting up OAuth 1.0a User Context authentication...")
@@ -71,7 +93,8 @@ class TwitterTranslator:
                     consumer_key=api_key,
                     consumer_secret=api_secret,
                     access_token=access_token,
-                    access_token_secret=access_token_secret
+                    access_token_secret=access_token_secret,
+                    wait_on_rate_limit=True  # Add automatic rate limit handling
                 )
                 
                 # Store the app client as the default client for read operations
@@ -81,20 +104,32 @@ class TwitterTranslator:
                 # Test user authentication but don't fail if it doesn't work
                 try:
                     me = self.user_client.get_me()
-                    if me and hasattr(me, 'data') and me.data:
-                        auth_username = me.data.username
-                        logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
-                        self.user_auth_working = True
+                    logging.debug(f"User auth response: {me}")
+                    
+                    if me:
+                        logging.debug(f"User auth response type: {type(me)}")
+                        logging.debug(f"User auth response attributes: {dir(me)}")
+                        if hasattr(me, 'data') and me.data:
+                            auth_username = me.data.username
+                            logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
+                            self.user_auth_working = True
+                        else:
+                            logging.warning("OAuth 1.0a response missing expected data structure")
                     else:
-                        logging.warning("OAuth 1.0a authentication response format unexpected")
+                        logging.warning("OAuth 1.0a authentication returned empty response")
                 except tweepy.errors.Unauthorized as e:
-                    logging.warning(f"OAuth 1.0a authentication failed (unauthorized): {str(e)}")
+                    logging.warning(f"OAuth 1.0a authentication unauthorized: {str(e)}")
+                except tweepy.errors.TweepyException as e:
+                    logging.warning(f"OAuth 1.0a authentication failed with TweepyException: {str(e)}")
                 except Exception as e:
-                    logging.warning(f"OAuth 1.0a authentication failed: {str(e)}")
+                    logging.warning(f"OAuth 1.0a authentication failed with unexpected error: {str(e)}")
                 
                 if not self.user_auth_working:
                     logging.warning("User authentication not working - replies will be disabled")
-                    logging.warning("Please check Twitter Developer Portal settings and update credentials")
+                    logging.warning("Please verify Twitter Developer Portal settings:")
+                    logging.warning("1. Check that OAuth 1.0a is enabled")
+                    logging.warning("2. Verify Read and Write permissions are granted")
+                    logging.warning("3. Confirm Access Token has correct permissions")
                     
                     # Test write permissions
                     logging.info("Testing write permissions...")
