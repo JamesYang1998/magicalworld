@@ -40,13 +40,33 @@ class TwitterTranslator:
             
             # Test authentication and get user info
             try:
-                me = self.client.get_me()
+                # First try to get app-only authentication status
+                logging.info("Testing app-only authentication...")
+                app_status = self.client.get_oauth2_app_auth_status()
+                if app_status:
+                    logging.info("App-only authentication successful")
+                
+                # Then try user context authentication
+                logging.info("Testing user context authentication...")
+                me = self.client.get_me(user_auth=True)
                 if me and 'data' in me:
                     logging.info(f"Successfully authenticated as @{me['data']['username']}")
+                    logging.info("Checking write permissions...")
+                    # Try to verify write permissions by getting user's tweets
+                    test_tweets = self.client.get_users_tweets(me['data']['id'], max_results=1)
+                    if test_tweets:
+                        logging.info("Write permissions verified")
+                    else:
+                        logging.warning("Could not verify write permissions")
                 else:
                     raise tweepy.errors.Unauthorized("Failed to get user info")
+            except tweepy.errors.Unauthorized as auth_error:
+                logging.error(f"Authentication failed with error: {str(auth_error)}")
+                logging.error("Please verify your Twitter API credentials and access level (Elevated access required)")
+                raise
             except Exception as auth_error:
                 logging.error(f"Authentication test failed: {str(auth_error)}")
+                logging.error("Please check your Twitter Developer Portal for API status and permissions")
                 raise
             
             # Get user ID from username using v2 endpoint
