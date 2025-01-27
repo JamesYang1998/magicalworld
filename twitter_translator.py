@@ -5,8 +5,20 @@ import os
 from typing import Optional
 
 class TwitterTranslator:
-    def __init__(self, twitter_bearer_token: str, openai_api_key: str):
-        self.client = tweepy.Client(bearer_token=twitter_bearer_token)
+    def __init__(self, bearer_token: str, consumer_key: str, consumer_secret: str, 
+                 access_token: str, access_token_secret: str, openai_api_key: str, target_username: str):
+        # Read-only client for fetching tweets
+        self.client = tweepy.Client(
+            bearer_token=bearer_token,
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret
+        )
+        # Get user ID from username
+        user = self.client.get_user(username=target_username)
+        self.target_user_id = user.data.id
+        self.target_username = target_username
         openai.api_key = openai_api_key
         
     async def translate_text(self, text: str) -> Optional[str]:
@@ -30,12 +42,14 @@ class TwitterTranslator:
         tweet = self.client.get_tweet(tweet_id)
         if tweet and tweet.data:
             # Check if tweet is in Chinese (simplified or traditional)
-            if any('\u4e00' <= char <= '\u9fff' for char in tweet.data['text']):
-                translation = await self.translate_text(tweet.data['text'])
+            if any('\u4e00' <= char <= '\u9fff' for char in tweet.data.text):
+                translation = await self.translate_text(tweet.data.text)
                 if translation:
-                    # Here you would implement the logic to post or store the translation
-                    print(f"Original: {tweet.data['text']}")
-                    print(f"Translation: {translation}")
+                    # Reply to the tweet with the translation
+                    self.client.create_tweet(
+                        text=f"English translation:\n{translation}",
+                        in_reply_to_tweet_id=tweet_id
+                    )
 
 class TweetStream(tweepy.StreamingClient):
     def __init__(self, bearer_token: str, translator: TwitterTranslator):
@@ -45,21 +59,39 @@ class TweetStream(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         """Called when a tweet is received."""
-        self.loop.create_task(self.translator.process_tweet(tweet.id))
+        # Only process tweets from our target user
+        if tweet.author_id == self.translator.target_user_id:
+            self.loop.create_task(self.translator.process_tweet(tweet.id))
 
 def main():
-    # These would come from environment variables in production
-    TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
+    # Get credentials from environment variables
+    TWITTER_BEARER_TOKEN = os.getenv("TwitterAPIbearertoken")
+    TWITTER_API_KEY = os.getenv("TwitterAPIkey")
+    TWITTER_API_SECRET = os.getenv("TwitterAPIsecret")
+    TWITTER_ACCESS_TOKEN = os.getenv("TwitterAPIAccesstoken")
+    TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TwitterAPIAccesstokensecret")
+    TARGET_USERNAME = os.getenv("Username")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     
-    if not all([TWITTER_BEARER_TOKEN, OPENAI_API_KEY]):
+    if not all([TWITTER_BEARER_TOKEN, TWITTER_API_KEY, TWITTER_API_SECRET,
+                TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET,
+                TARGET_USERNAME, OPENAI_API_KEY]):
         raise ValueError("Missing required environment variables")
 
-    translator = TwitterTranslator(TWITTER_BEARER_TOKEN, OPENAI_API_KEY)
+    translator = TwitterTranslator(
+        TWITTER_BEARER_TOKEN,
+        TWITTER_API_KEY,
+        TWITTER_API_SECRET,
+        TWITTER_ACCESS_TOKEN,
+        TWITTER_ACCESS_TOKEN_SECRET,
+        OPENAI_API_KEY,
+        TARGET_USERNAME
+    )
+    
     stream = TweetStream(TWITTER_BEARER_TOKEN, translator)
     
-    # Filter for tweets that might be in Chinese
-    stream.filter(track=["的", "是", "在"])  # Common Chinese characters
+    # Filter for tweets from the target user
+    stream.filter(follow=[translator.target_user_id])
 
 if __name__ == "__main__":
     main()
