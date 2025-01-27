@@ -174,7 +174,10 @@ def main():
     TWITTER_ACCESS_TOKEN = os.getenv("TwitterAPIAccesstoken")
     TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TwitterAPIAccesstokensecret")
     TARGET_USERNAME = os.getenv("Username")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Will use default OpenAI key from environment
+    OPENAI_API_KEY = os.getenv("OpenaiAPI")
+    
+    # Set OpenAI API key in environment
+    os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
     
     required_vars = {
         "Bearer Token": TWITTER_BEARER_TOKEN,
@@ -209,18 +212,35 @@ def main():
     
     try:
         print(f"Starting stream to monitor tweets from @{TARGET_USERNAME}")
+        logging.info("Setting up stream rules...")
+        
         # Set up filter rule for the target user
-        # First, delete any existing rules
-        rules = stream.get_rules()
-        if rules and rules.data:
-            rule_ids = [rule.id for rule in rules.data]
-            stream.delete_rules(rule_ids)
-        
-        # Add new rule to follow target user
-        stream.add_rules(tweepy.StreamRule(f"from:{translator.target_username}"))
-        
-        # Start filtering
-        stream.filter(tweet_fields=["author_id", "text"])
+        try:
+            # First, delete any existing rules
+            rules = stream.get_rules()
+            if rules and rules.data:
+                rule_ids = [rule.id for rule in rules.data]
+                stream.delete_rules(rule_ids)
+                logging.info("Deleted existing stream rules")
+            
+            # Add new rule to follow target user
+            rule = tweepy.StreamRule(f"from:{translator.target_username}")
+            result = stream.add_rules(rule)
+            if result and result.data:
+                logging.info(f"Added stream rule: {result.data[0].value}")
+            else:
+                raise ValueError("Failed to add stream rule")
+            
+            # Start filtering with expanded tweet information
+            logging.info("Starting filtered stream...")
+            stream.filter(
+                tweet_fields=["author_id", "text", "referenced_tweets"],
+                expansions=["referenced_tweets.id"],
+                threaded=True
+            )
+        except Exception as e:
+            logging.error(f"Error in stream setup: {str(e)}")
+            raise
     except KeyboardInterrupt:
         print("\nStopping stream...")
         stream.disconnect()
