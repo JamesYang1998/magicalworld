@@ -53,11 +53,17 @@ class TwitterTranslator:
                 # Initialize client with OAuth 2.0 App-Only authentication
                 logging.info("Setting up OAuth 2.0 App-Only authentication...")
                 self.app_client = tweepy.Client(bearer_token=bearer_token)
-                test_user = self.app_client.get_user(username="twitter")
-                if test_user and 'data' in test_user:
-                    logging.info("OAuth 2.0 App-Only authentication successful")
-                else:
-                    raise tweepy.errors.Unauthorized("App-Only authentication failed")
+                
+                # Test app-only authentication with error handling
+                try:
+                    test_user = self.app_client.get_user(username="twitter")
+                    if test_user and hasattr(test_user, 'data') and test_user.data:
+                        logging.info("OAuth 2.0 App-Only authentication successful")
+                    else:
+                        raise tweepy.errors.TweepyException("App-Only authentication response format unexpected")
+                except Exception as e:
+                    logging.error(f"App-Only authentication failed: {str(e)}")
+                    raise tweepy.errors.TweepyException(f"App-Only authentication failed: {str(e)}")
                 
                 # Set up OAuth 1.0a User Context authentication for write operations
                 logging.info("Setting up OAuth 1.0a User Context authentication...")
@@ -70,20 +76,25 @@ class TwitterTranslator:
                 
                 # Store the app client as the default client for read operations
                 self.client = self.app_client
+                self.user_auth_working = False
                 
                 # Test user authentication but don't fail if it doesn't work
                 try:
                     me = self.user_client.get_me()
-                    if me and 'data' in me:
-                        auth_username = me['data']['username']
+                    if me and hasattr(me, 'data') and me.data:
+                        auth_username = me.data.username
                         logging.info(f"OAuth 1.0a authentication successful as @{auth_username}")
                         self.user_auth_working = True
                     else:
                         logging.warning("OAuth 1.0a authentication response format unexpected")
-                        self.user_auth_working = False
+                except tweepy.errors.Unauthorized as e:
+                    logging.warning(f"OAuth 1.0a authentication failed (unauthorized): {str(e)}")
                 except Exception as e:
-                    logging.warning(f"OAuth 1.0a authentication not working: {str(e)}")
-                    self.user_auth_working = False
+                    logging.warning(f"OAuth 1.0a authentication failed: {str(e)}")
+                
+                if not self.user_auth_working:
+                    logging.warning("User authentication not working - replies will be disabled")
+                    logging.warning("Please check Twitter Developer Portal settings and update credentials")
                     
                     # Test write permissions
                     logging.info("Testing write permissions...")
