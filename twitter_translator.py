@@ -223,14 +223,24 @@ async def main():
         )
         
         # Initialize and run tweet monitor
+        logging.info("Starting tweet monitor...")
         monitor = TweetMonitor(translator, client)
-        await monitor.run()
-    except KeyboardInterrupt:
-        print("\nStopping stream...")
-        stream.disconnect()
+        
+        try:
+            await monitor.run()
+        except KeyboardInterrupt:
+            logging.info("Stopping monitor...")
+            monitor.running = False
+        
     except Exception as e:
-        print(f"Error: {e}")
-        stream.disconnect()
+        logging.error(f"Error in main: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Application stopped by user")
+    except Exception as e:
+        logging.error(f"Application error: {str(e)}")
+        raise
