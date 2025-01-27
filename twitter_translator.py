@@ -66,17 +66,19 @@ class TweetStream(tweepy.StreamingClient):
 def main():
     # Get credentials from environment variables
     TWITTER_BEARER_TOKEN = os.getenv("TwitterAPIbearertoken")
-    TWITTER_API_KEY = os.getenv("TwitterAPIkey")
-    TWITTER_API_SECRET = os.getenv("TwitterAPIsecret")
+    TWITTER_API_KEY = TWITTER_BEARER_TOKEN  # Using bearer token as API key
+    TWITTER_API_SECRET = ""  # Not needed when using bearer token
     TWITTER_ACCESS_TOKEN = os.getenv("TwitterAPIAccesstoken")
     TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TwitterAPIAccesstokensecret")
     TARGET_USERNAME = os.getenv("Username")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Will use default OpenAI key from environment
     
-    if not all([TWITTER_BEARER_TOKEN, TWITTER_API_KEY, TWITTER_API_SECRET,
-                TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET,
-                TARGET_USERNAME, OPENAI_API_KEY]):
-        raise ValueError("Missing required environment variables")
+    if not all([TWITTER_BEARER_TOKEN, TWITTER_ACCESS_TOKEN,
+                TWITTER_ACCESS_TOKEN_SECRET, TARGET_USERNAME]):
+        raise ValueError("Missing required Twitter credentials or username")
+    
+    if not OPENAI_API_KEY:
+        print("Warning: No OpenAI API key found, translations may not work")
 
     translator = TwitterTranslator(
         TWITTER_BEARER_TOKEN,
