@@ -28,8 +28,10 @@ def get_tweets(username, max_retries=5):
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
         'https://nitter.adminforge.de',    # Fast instance
-        'https://nitter.unixfox.eu',      # Very reliable instance
-        'https://nitter.tiekoetter.com'   # German instance with good uptime
+        'https://nitter.moomoo.me',       # Very reliable instance
+        'https://nitter.weiler.dev',      # German instance with good uptime
+        'https://nitter.smnz.de',         # Reliable German instance
+        'https://nitter.tux.pizza'        # Fast and reliable instance
     ]
     
     # Backup Nitter instances (try if primary fails)
@@ -91,16 +93,16 @@ def get_tweets(username, max_retries=5):
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 23.0:  # Even stricter 24-hour check with larger buffer
+                        if hours_ago < 22.5:  # Even stricter 24-hour check with larger buffer
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
                                 'timestamp': tweet_datetime,
                             })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 23h limit)")
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 22.5h limit)")
                         else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23h)")
-                            if len(tweets) >= 10:  # Stop earlier to avoid older tweets
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 22.5h)")
+                            if len(tweets) >= 5:  # Stop even earlier to avoid older tweets
                                 break
                     except Exception as e:
                         print(f"Error parsing tweet: {str(e)}")
