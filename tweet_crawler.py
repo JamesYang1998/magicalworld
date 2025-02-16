@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import time
 import random
 import urllib3
+import concurrent.futures
+from typing import List, Dict, Any
 
 # Disable SSL verification warnings globally
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -112,34 +114,38 @@ def get_tweets(username, max_retries=7):
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
 
+def process_account(username: str) -> List[Dict[str, Any]]:
+    """Process a single Twitter account and return its tweets"""
+    try:
+        return get_tweets(username)
+    except Exception as e:
+        print(f"Error processing account @{username}: {str(e)}")
+        return []
+
 def main():
     all_tweets = []
     total_accounts = len(TWITTER_ACCOUNTS)
     successful_accounts = 0
     print(f"Starting to crawl tweets from {total_accounts} accounts...")
     
-    for idx, username in enumerate(TWITTER_ACCOUNTS, 1):
-        print(f"\n[{idx}/{total_accounts}] Crawling tweets from @{username}...")
-        try:
-            tweets = get_tweets(username)
-            all_tweets.extend(tweets)
-            if tweets:
-                successful_accounts += 1
-                # Shorter delay if we successfully got tweets
-                delay = random.uniform(5, 10)
-            else:
-                # Longer delay if we failed to get tweets
-                delay = random.uniform(15, 30)
-            
-            print(f"Found {len(tweets)} recent tweets from @{username}")
-            
-            # Add delay between accounts
-            if idx < total_accounts:
-                print(f"Waiting {delay:.1f} seconds before next account...")
-                time.sleep(delay)
-        except Exception as e:
-            print(f"Error processing account @{username}: {str(e)}")
-            continue
+    # Process accounts in parallel with a maximum of 3 workers
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        # Submit all accounts for processing
+        future_to_username = {executor.submit(process_account, username): username 
+                            for username in TWITTER_ACCOUNTS}
+        
+        # Process completed futures as they finish
+        for future in concurrent.futures.as_completed(future_to_username):
+            username = future_to_username[future]
+            try:
+                tweets = future.result()
+                all_tweets.extend(tweets)
+                if tweets:
+                    successful_accounts += 1
+                print(f"Found {len(tweets)} recent tweets from @{username}")
+            except Exception as e:
+                print(f"Error processing account @{username}: {str(e)}")
+                continue
     
     print(f"\nCrawling complete! Processed {total_accounts} accounts.")
     print(f"Successfully fetched tweets from {successful_accounts} accounts.")
