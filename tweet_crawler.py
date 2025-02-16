@@ -19,50 +19,61 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username: str, max_retries: int = 20) -> List[Dict[str, Any]]:
+def get_tweets(username: str, max_retries: int = 15) -> List[Dict[str, Any]]:
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
     }
     
-    # Single most reliable instance with proven track record
-    primary_instance = 'https://nitter.privacydev.net'    # Most reliable instance
-    
-    # Backup instances for when primary fails
-    backup_instances = [
-        'https://nitter.cz',               # Czech instance
-        'https://bird.trom.tf',            # Reliable backup
+    # Only most reliable Nitter instances
+    all_instances = [
+        'https://nitter.privacydev.net',   # Most reliable instance
         'https://nitter.net',              # Official instance
-        'https://nitter.fdn.fr',           # French instance
-        'https://nitter.1d4.us'            # US instance
+        'https://nitter.cz'                # Czech instance
     ]
+    
+    # Track instance status
+    successful_instances = set()
+    rate_limited_instances = set()
+    no_tweets_instances = set()
     
     for attempt in range(max_retries):
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
-            time.sleep(45 + attempt * 15)  # Progressive delay between retries
+            delay = min(15 + attempt * 2, 45)  # Progressive delay capped at 45s
+            time.sleep(delay)
+            
+            # Clear rate limits every few attempts
+            if attempt % 5 == 0:
+                rate_limited_instances.clear()
         
-        # Start with primary instance
-        instances = [primary_instance]
+        # Use successful instances first, then available instances
+        instances = list(successful_instances)
+        if not instances:
+            available_instances = [i for i in all_instances if i not in rate_limited_instances and i not in no_tweets_instances]
+            if not available_instances:
+                print(f"No available instances left for @{username}")
+                break
+            instances = available_instances
         
-        # Add backup instances after several retries
-        if attempt >= 10:
-            instances.extend(backup_instances)
-            random.shuffle(instances)
+        random.shuffle(instances)
         
         for current_instance in instances:
             try:
                 url = f'{current_instance}/{username}'
                 print(f"Trying {current_instance} for @{username}...")
-                response = requests.get(url, headers=headers, timeout=15, verify=False)
+                
+                response = requests.get(url, headers=headers, timeout=20, verify=False)
                 
                 if response.status_code == 429:  # Rate limited
-                    print(f"Rate limited on {current_instance}, cooling down...")
-                    time.sleep(90)  # Longer cooldown for rate limits
-                    response = requests.get(url, headers=headers, timeout=15, verify=False)
-                    if response.status_code != 200:
-                        print(f"Still rate limited on {current_instance}, trying next instance...")
-                        continue
+                    print(f"Rate limited on {current_instance}, blacklisting...")
+                    rate_limited_instances.add(current_instance)
+                    continue  # Don't retry rate-limited instances
                 elif response.status_code != 200:
                     print(f"Failed to fetch tweets from {current_instance} for {username}. Status code: {response.status_code}")
                     continue
@@ -85,16 +96,17 @@ def get_tweets(username: str, max_retries: int = 20) -> List[Dict[str, Any]]:
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 18.0:  # Ultra-strict 24-hour check
+                        if hours_ago < 8.0:  # Ultra-strict 24-hour check
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
                                 'timestamp': tweet_datetime,
                             })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 18.0h limit)")
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 8.0h limit)")
+                            successful_instances.add(current_instance)
                         else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 18.0h)")
-                            if len(tweets) >= 2:  # Stop very early to avoid older tweets
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 8.0h)")
+                            if len(tweets) >= 2:  # Stop early to avoid older tweets
                                 break
                     except Exception as e:
                         print(f"Error parsing tweet: {str(e)}")
@@ -105,6 +117,12 @@ def get_tweets(username: str, max_retries: int = 20) -> List[Dict[str, Any]]:
                     return tweets
                 
                 print(f"No recent tweets found on {current_instance} for @{username}")
+                no_tweets_instances.add(current_instance)
+                
+                # If all instances report no tweets, stop retrying
+                if len(no_tweets_instances) == len(all_instances):
+                    print(f"No recent tweets found for @{username} on any instance")
+                    return []
                 
             except requests.exceptions.RequestException as e:
                 print(f"Error accessing {current_instance} for {username}: {str(e)}")
@@ -115,7 +133,7 @@ def get_tweets(username: str, max_retries: int = 20) -> List[Dict[str, Any]]:
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
 
-def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 18.0) -> List[Dict[str, Any]]:
+def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 8.0) -> List[Dict[str, Any]]:
     """Clean tweets list to ensure strict time compliance"""
     now = datetime.now()
     cleaned = []
@@ -144,24 +162,22 @@ def main():
     successful_accounts = 0
     print(f"Starting to crawl tweets from {total_accounts} accounts...")
     
-    # Process accounts in parallel with a maximum of 1 worker to avoid rate limits
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        # Submit all accounts for processing
-        future_to_username = {executor.submit(process_account, username): username 
-                            for username in TWITTER_ACCOUNTS}
-        
-        # Process completed futures as they finish
-        for future in concurrent.futures.as_completed(future_to_username):
-            username = future_to_username[future]
-            try:
-                tweets = future.result()
-                all_tweets.extend(tweets)
-                if tweets:
-                    successful_accounts += 1
-                print(f"Found {len(tweets)} recent tweets from @{username}")
-            except Exception as e:
-                print(f"Error processing account @{username}: {str(e)}")
-                continue
+    # Sort accounts by likelihood of having recent tweets
+    priority_accounts = ['elonmusk', 'Bloomberg', 'Forbes', 'MarketWatch', 'markets']
+    other_accounts = [acc for acc in TWITTER_ACCOUNTS if acc not in priority_accounts]
+    sorted_accounts = priority_accounts + other_accounts
+    
+    # Process accounts sequentially to avoid rate limits
+    for username in sorted_accounts:
+        try:
+            tweets = process_account(username)
+            all_tweets.extend(tweets)
+            if tweets:
+                successful_accounts += 1
+            print(f"Found {len(tweets)} recent tweets from @{username}")
+        except Exception as e:
+            print(f"Error processing account @{username}: {str(e)}")
+            continue
     
     print(f"\nCrawling complete! Processed {total_accounts} accounts.")
     print(f"Successfully fetched tweets from {successful_accounts} accounts.")
