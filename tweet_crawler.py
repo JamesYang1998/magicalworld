@@ -19,102 +19,90 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username, max_retries=15):
+def get_tweets(username: str, max_retries: int = 30) -> List[Dict[str, Any]]:
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Single most reliable instance with proven track record
-    nitter_instances = [
-        'https://nitter.privacydev.net'    # Most reliable instance
-    ]
-    
-    # Retry with backup instances only if main instance fails completely
-    backup_instances = [
+    # Multiple reliable instances with proven track record
+    primary_instances = [
+        'https://nitter.privacydev.net',   # Most reliable instance
         'https://nitter.cz',               # Czech instance
+        'https://bird.trom.tf',            # Reliable backup
         'https://nitter.net',              # Official instance
-        'https://bird.trom.tf'             # Reliable backup
+        'https://nitter.fdn.fr',           # French instance
+        'https://nitter.1d4.us'            # US instance
     ]
-    
-    # Try main instance first
-    instances_to_try = nitter_instances.copy()
-    
-    # Only add backup instances after a few retries
-    if attempt >= 5:
-        instances_to_try.extend(backup_instances)
-    random.shuffle(instances_to_try)
     
     for attempt in range(max_retries):
+        # Rotate through instances systematically
+        instance_index = attempt % len(primary_instances)
+        current_instance = primary_instances[instance_index]
+        
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
-            time.sleep(45 + attempt * 20)  # Moderate increasing delay between retries
+            time.sleep(30 + (attempt % 6) * 15)  # Cycle delays every 6 attempts
         
-        # Using single most reliable instance
-        instance_list = nitter_instances.copy()
-        random.shuffle(instance_list)
-        
-        for instance in instances_to_try:
-            url = f'{instance}/{username}'
-            try:
-                print(f"Trying {instance} for @{username}...")
+        try:
+            url = f'{current_instance}/{username}'
+            print(f"Trying {current_instance} for @{username}...")
+            response = requests.get(url, headers=headers, timeout=15, verify=False)
+            
+            if response.status_code == 429:  # Rate limited
+                print(f"Rate limited on {current_instance}, cooling down...")
+                time.sleep(90)  # Much longer cooldown for rate limits
                 response = requests.get(url, headers=headers, timeout=15, verify=False)
-                
-                if response.status_code == 429:  # Rate limited
-                    print(f"Rate limited on {instance}, cooling down...")
-                    time.sleep(90)  # Much longer cooldown for rate limits
-                    response = requests.get(url, headers=headers, timeout=15, verify=False)
-                    if response.status_code != 200:
-                        print(f"Still rate limited on {instance}, trying next instance...")
-                        time.sleep(30)  # Additional cooldown before next instance
-                        continue
-                elif response.status_code != 200:
-                    print(f"Failed to fetch tweets from {instance} for {username}. Status code: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"Still rate limited on {current_instance}, trying next instance...")
                     continue
-                
-                # Parse tweets from response
-                soup = BeautifulSoup(response.text, 'html.parser')
-                tweets = []
-                
-                for tweet in soup.find_all('div', class_='timeline-item'):
-                    try:
-                        content = tweet.find('div', class_='tweet-content')
-                        time_element = tweet.find('span', class_='tweet-date')
-                        
-                        if not content or not time_element:
-                            continue
-                        
-                        tweet_time = time_element.find('a')['title']
-                        tweet_datetime = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
-                        
-                        time_diff = datetime.now() - tweet_datetime
-                        hours_ago = time_diff.total_seconds()/3600
-                        
-                        if hours_ago < 20.0:  # Even stricter 24-hour check
-                            tweets.append({
-                                'username': username,
-                                'content': content.text.strip(),
-                                'timestamp': tweet_datetime,
-                            })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 21.5h limit)")
-                        else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 21.5h)")
-                            if len(tweets) >= 2:  # Stop very early to avoid older tweets
-                                break
-                    except Exception as e:
-                        print(f"Error parsing tweet: {str(e)}")
+            elif response.status_code != 200:
+                print(f"Failed to fetch tweets from {current_instance} for {username}. Status code: {response.status_code}")
+                continue
+            
+            # Parse tweets from response
+            soup = BeautifulSoup(response.text, 'html.parser')
+            tweets = []
+            
+            for tweet in soup.find_all('div', class_='timeline-item'):
+                try:
+                    content = tweet.find('div', class_='tweet-content')
+                    time_element = tweet.find('span', class_='tweet-date')
+                    
+                    if not content or not time_element:
                         continue
-                
-                if tweets:
-                    print(f"Successfully fetched {len(tweets)} tweets from {instance} for @{username}")
-                    return tweets
-                
-                print(f"No recent tweets found on {instance} for @{username}")
-                
-            except requests.exceptions.RequestException as e:
-                print(f"Error accessing {instance} for {username}: {str(e)}")
-            except Exception as e:
-                print(f"Unexpected error: {str(e)}")
+                    
+                    tweet_time = time_element.find('a')['title']
+                    tweet_datetime = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
+                    
+                    time_diff = datetime.now() - tweet_datetime
+                    hours_ago = time_diff.total_seconds()/3600
+                    
+                    if hours_ago < 20.0:  # Even stricter 24-hour check
+                        tweets.append({
+                            'username': username,
+                            'content': content.text.strip(),
+                            'timestamp': tweet_datetime,
+                        })
+                        print(f"Found tweet from {hours_ago:.1f} hours ago (within 20.0h limit)")
+                    else:
+                        print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 20.0h)")
+                        if len(tweets) >= 2:  # Stop very early to avoid older tweets
+                            break
+                except Exception as e:
+                    print(f"Error parsing tweet: {str(e)}")
+                    continue
+            
+            if tweets:
+                print(f"Successfully fetched {len(tweets)} tweets from {current_instance} for @{username}")
+                return tweets
+            
+            print(f"No recent tweets found on {current_instance} for @{username}")
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error accessing {current_instance} for {username}: {str(e)}")
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
     
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
@@ -148,7 +136,7 @@ def main():
     successful_accounts = 0
     print(f"Starting to crawl tweets from {total_accounts} accounts...")
     
-    # Process accounts in parallel with a maximum of 2 workers to avoid rate limits
+    # Process accounts in parallel with a maximum of 1 worker to avoid rate limits
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         # Submit all accounts for processing
         future_to_username = {executor.submit(process_account, username): username 
