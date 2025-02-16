@@ -85,16 +85,16 @@ def get_tweets(username, max_retries=7):
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 22.5:  # Even stricter 24-hour check with larger buffer
+                        if hours_ago < 22.0:  # Even stricter 24-hour check with larger buffer
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
                                 'timestamp': tweet_datetime,
                             })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 22.5h limit)")
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 22h limit)")
                         else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 22.5h)")
-                            if len(tweets) >= 5:  # Stop even earlier to avoid older tweets
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 22h)")
+                            if len(tweets) >= 3:  # Stop even earlier to avoid older tweets
                                 break
                     except Exception as e:
                         print(f"Error parsing tweet: {str(e)}")
@@ -114,10 +114,20 @@ def get_tweets(username, max_retries=7):
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
 
+def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 22.0) -> List[Dict[str, Any]]:
+    """Clean tweets list to ensure strict time compliance"""
+    now = datetime.now()
+    return [
+        tweet for tweet in tweets
+        if (now - tweet['timestamp']).total_seconds() / 3600 < max_age
+    ]
+
 def process_account(username: str) -> List[Dict[str, Any]]:
     """Process a single Twitter account and return its tweets"""
     try:
-        return get_tweets(username)
+        tweets = get_tweets(username)
+        # Additional cleaning pass to ensure strict time compliance
+        return clean_old_tweets(tweets)
     except Exception as e:
         print(f"Error processing account @{username}: {str(e)}")
         return []
@@ -128,8 +138,8 @@ def main():
     successful_accounts = 0
     print(f"Starting to crawl tweets from {total_accounts} accounts...")
     
-    # Process accounts in parallel with a maximum of 3 workers
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    # Process accounts in parallel with a maximum of 2 workers to avoid rate limits
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         # Submit all accounts for processing
         future_to_username = {executor.submit(process_account, username): username 
                             for username in TWITTER_ACCOUNTS}
