@@ -34,14 +34,14 @@ def get_tweets(username):
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Focus on most reliable Nitter instances
+    # Focus on most reliable Nitter instances with better rate limits
     nitter_instances = [
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
         'https://nitter.ktachibana.party', # Alternative
-        'https://bird.habedieeh.re',      # Fast alternative
-        'https://nitter.hostux.net',      # Reliable instance
-        'https://nitter.adminforge.de'    # Fast instance
+        'https://nitter.adminforge.de',    # Fast instance
+        'https://nitter.sethforprivacy.com', # Reliable instance
+        'https://nitter.snopyta.org'      # Fast instance
     ]
     
     # Randomize order to distribute load
@@ -92,12 +92,13 @@ def get_tweets(username):
                     
                     time_diff = datetime.now() - tweet_datetime
                     hours_ago = time_diff.total_seconds()/3600
-                    if hours_ago <= 24.0:  # Strict 24-hour check
+                    if hours_ago < 24.0:  # Stricter 24-hour check (less than, not less than or equal)
                         tweets.append({
                             'username': username,
                             'content': content.text.strip(),
                             'timestamp': tweet_datetime,
                         })
+                        print(f"Found tweet from {hours_ago:.1f} hours ago")
                     else:
                         print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 24.0)")
                 except Exception as e:
