@@ -19,7 +19,7 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username, max_retries=10):
+def get_tweets(username, max_retries=15):
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
@@ -30,19 +30,31 @@ def get_tweets(username, max_retries=10):
         'https://nitter.privacydev.net'    # Most reliable instance
     ]
     
-    # No backup instances - focus on quality over quantity
-    backup_instances = []
+    # Retry with backup instances only if main instance fails completely
+    backup_instances = [
+        'https://nitter.cz',               # Czech instance
+        'https://nitter.net',              # Official instance
+        'https://bird.trom.tf'             # Reliable backup
+    ]
+    
+    # Try main instance first
+    instances_to_try = nitter_instances.copy()
+    
+    # Only add backup instances after a few retries
+    if attempt >= 5:
+        instances_to_try.extend(backup_instances)
+    random.shuffle(instances_to_try)
     
     for attempt in range(max_retries):
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
-            time.sleep(60 + attempt * 30)  # Much longer increasing delay between retries
+            time.sleep(45 + attempt * 20)  # Moderate increasing delay between retries
         
         # Using single most reliable instance
         instance_list = nitter_instances.copy()
         random.shuffle(instance_list)
         
-        for instance in instance_list:
+        for instance in instances_to_try:
             url = f'{instance}/{username}'
             try:
                 print(f"Trying {instance} for @{username}...")
@@ -78,7 +90,7 @@ def get_tweets(username, max_retries=10):
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 21.5:  # Ultra-strict 24-hour check
+                        if hours_ago < 20.0:  # Even stricter 24-hour check
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
@@ -107,7 +119,7 @@ def get_tweets(username, max_retries=10):
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
 
-def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 21.5) -> List[Dict[str, Any]]:
+def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 20.0) -> List[Dict[str, Any]]:
     """Clean tweets list to ensure strict time compliance"""
     now = datetime.now()
     cleaned = []
@@ -137,7 +149,7 @@ def main():
     print(f"Starting to crawl tweets from {total_accounts} accounts...")
     
     # Process accounts in parallel with a maximum of 2 workers to avoid rate limits
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         # Submit all accounts for processing
         future_to_username = {executor.submit(process_account, username): username 
                             for username in TWITTER_ACCOUNTS}
