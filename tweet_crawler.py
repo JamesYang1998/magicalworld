@@ -39,9 +39,9 @@ def get_tweets(username):
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
         'https://nitter.adminforge.de',    # Fast instance
-        'https://nitter.1d4.us',          # Reliable instance
-        'https://nitter.kavin.rocks',      # Fast instance
-        'https://nitter.soopy.moe'         # Reliable instance
+        'https://nitter.bird.froth.zone',  # Very reliable instance
+        'https://nitter.catsarch.com',     # Fast and reliable
+        'https://nitter.perennialte.ch'    # Reliable instance
     ]
     
     # Randomize order to distribute load
@@ -58,7 +58,7 @@ def get_tweets(username):
             
             if response.status_code == 429:  # Rate limited
                 print(f"Rate limited on {instance}, cooling down...")
-                time.sleep(45)  # Longer cooldown for rate limits
+                time.sleep(60)  # Even longer cooldown for rate limits
                 # Try the same instance again after cooldown
                 response = requests.get(url, headers=headers, timeout=15, verify=False)
                 if response.status_code == 200:
@@ -142,8 +142,14 @@ def main():
             
             print(f"Found {len(tweets)} recent tweets from @{username}")
             
-            # Add delay between accounts
+            # Add adaptive delay between accounts based on success
             if idx < total_accounts:
+                if len(tweets) > 0:
+                    # Shorter delay if we got tweets (5-10s)
+                    delay = random.uniform(5, 10)
+                else:
+                    # Longer delay if no tweets (15-30s)
+                    delay = random.uniform(15, 30)
                 print(f"Waiting {delay:.1f} seconds before next account...")
                 time.sleep(delay)
         except Exception as e:
