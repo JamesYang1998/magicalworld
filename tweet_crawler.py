@@ -17,110 +17,100 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweet_time(time_str):
-    """Convert relative time to datetime object"""
-    now = datetime.now()
-    if 'h' in time_str:
-        hours = int(time_str.replace('h', ''))
-        return now - timedelta(hours=hours)
-    elif 'm' in time_str:
-        minutes = int(time_str.replace('m', ''))
-        return now - timedelta(minutes=minutes)
-    return None
-
-def get_tweets(username):
-    """Fetch tweets for a given username using nitter instances"""
+def get_tweets(username, max_retries=3):
+    """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Focus on most reliable Nitter instances with better rate limits
-    nitter_instances = [
+    # Primary Nitter instances (most reliable)
+    primary_instances = [
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
-        'https://nitter.adminforge.de',    # Fast instance
-        'https://nitter.fdn.fr',          # Very reliable French instance
-        'https://nitter.pw',              # Fast and reliable
-        'https://nitter.mint.lgbt',       # Reliable instance
-        'https://nitter.esmailelbob.xyz', # Additional reliable instance
-        'https://nitter.poast.org'        # Extra backup instance
+        'https://nitter.adminforge.de'     # Fast instance
     ]
     
-    # Randomize order to distribute load
-    random.shuffle(nitter_instances)
+    # Backup Nitter instances (try if primary fails)
+    backup_instances = [
+        'https://nitter.fdn.fr',          # French instance
+        'https://nitter.pw',              # Fast and reliable
+        'https://nitter.mint.lgbt',       # Reliable instance
+        'https://nitter.esmailelbob.xyz', # Additional reliable
+        'https://nitter.poast.org',       # Extra backup
+        'https://nitter.d420.de',         # German instance
+        'https://nitter.caioalonso.com',  # Brazilian instance
+        'https://nitter.hostux.net'       # French backup
+    ]
     
-    # Shuffle the instances to distribute load
-    random.shuffle(nitter_instances)
-    
-    for instance in nitter_instances:
-        url = f'{instance}/{username}'
-        try:
-            print(f"Trying {instance} for @{username}...")
-            response = requests.get(url, headers=headers, timeout=15, verify=False)  # Disable SSL verification
-            
-            if response.status_code == 429:  # Rate limited
-                print(f"Rate limited on {instance}, cooling down...")
-                time.sleep(60)  # Even longer cooldown for rate limits
-                # Try the same instance again after cooldown
+    for attempt in range(max_retries):
+        if attempt > 0:
+            print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
+            time.sleep(30)  # Longer delay between retries
+        
+        # Combine primary instances with a random selection of backup instances for each attempt
+        nitter_instances = primary_instances + random.sample(backup_instances, min(4, len(backup_instances)))
+        random.shuffle(nitter_instances)
+        
+        for instance in nitter_instances:
+            url = f'{instance}/{username}'
+            try:
+                print(f"Trying {instance} for @{username}...")
                 response = requests.get(url, headers=headers, timeout=15, verify=False)
-                if response.status_code == 200:
-                    print(f"Successfully reconnected to {instance} after cooldown")
-                else:
-                    print(f"Still rate limited on {instance}, trying next instance...")
-                    continue
-            elif response.status_code == 404:  # Account not found
-                print(f"Account not found on {instance}, might be suspended or renamed")
-                continue
-            elif response.status_code == 401:  # Unauthorized
-                print(f"Access denied on {instance}, trying next instance...")
-                continue
-            elif response.status_code != 200:
-                print(f"Failed to fetch tweets from {instance} for {username}. Status code: {response.status_code}")
-                continue
-
-            soup = BeautifulSoup(response.text, 'html.parser')
-            tweets = []
-            
-            for tweet in soup.find_all('div', class_='timeline-item'):
-                try:
-                    content = tweet.find('div', class_='tweet-content')
-                    time_element = tweet.find('span', class_='tweet-date')
-                    
-                    if not content or not time_element:
+                
+                if response.status_code == 429:  # Rate limited
+                    print(f"Rate limited on {instance}, cooling down...")
+                    time.sleep(60)  # Longer cooldown for rate limits
+                    response = requests.get(url, headers=headers, timeout=15, verify=False)
+                    if response.status_code != 200:
+                        print(f"Still rate limited on {instance}, trying next instance...")
                         continue
-                    
-                    tweet_time = time_element.find('a')['title']
-                    tweet_datetime = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
-                    
-                    time_diff = datetime.now() - tweet_datetime
-                    hours_ago = time_diff.total_seconds()/3600
-                    if hours_ago < 23.5:  # Even stricter 24-hour check with larger buffer
-                        tweets.append({
-                            'username': username,
-                            'content': content.text.strip(),
-                            'timestamp': tweet_datetime,
-                        })
-                        print(f"Found tweet from {hours_ago:.1f} hours ago (within 23.5h limit)")
-                    else:
-                        print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23.5h)")
-                        if len(tweets) >= 20:  # Stop fetching if we have enough tweets and hit older ones
-                            break
-                except Exception as e:
-                    print(f"Error parsing tweet for {username}: {str(e)}")
+                elif response.status_code != 200:
+                    print(f"Failed to fetch tweets from {instance} for {username}. Status code: {response.status_code}")
                     continue
-            
-            if tweets:
-                print(f"Successfully fetched {len(tweets)} tweets from {instance} for @{username}")
-                return tweets
-            
-            print(f"No recent tweets found on {instance} for @{username}")
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error accessing {instance} for {username}: {str(e)}")
-            continue
-        except Exception as e:
-            print(f"Unexpected error for {username} on {instance}: {str(e)}")
-            continue
+                
+                # Parse tweets from response
+                soup = BeautifulSoup(response.text, 'html.parser')
+                tweets = []
+                
+                for tweet in soup.find_all('div', class_='timeline-item'):
+                    try:
+                        content = tweet.find('div', class_='tweet-content')
+                        time_element = tweet.find('span', class_='tweet-date')
+                        
+                        if not content or not time_element:
+                            continue
+                        
+                        tweet_time = time_element.find('a')['title']
+                        tweet_datetime = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
+                        
+                        time_diff = datetime.now() - tweet_datetime
+                        hours_ago = time_diff.total_seconds()/3600
+                        
+                        if hours_ago < 23.5:  # Strict 24-hour check with buffer
+                            tweets.append({
+                                'username': username,
+                                'content': content.text.strip(),
+                                'timestamp': tweet_datetime,
+                            })
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 23.5h limit)")
+                        else:
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23.5h)")
+                            if len(tweets) >= 20:  # Stop if we have enough tweets
+                                break
+                    except Exception as e:
+                        print(f"Error parsing tweet: {str(e)}")
+                        continue
+                
+                if tweets:
+                    print(f"Successfully fetched {len(tweets)} tweets from {instance} for @{username}")
+                    return tweets
+                
+                print(f"No recent tweets found on {instance} for @{username}")
+                
+            except requests.exceptions.RequestException as e:
+                print(f"Error accessing {instance} for {username}: {str(e)}")
+            except Exception as e:
+                print(f"Unexpected error: {str(e)}")
     
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
@@ -139,21 +129,15 @@ def main():
             if tweets:
                 successful_accounts += 1
                 # Shorter delay if we successfully got tweets
-                delay = random.uniform(5, 8)
+                delay = random.uniform(5, 10)
             else:
-                # Longer delay if we failed to get tweets to avoid rate limits
-                delay = random.uniform(15, 20)
+                # Longer delay if we failed to get tweets
+                delay = random.uniform(15, 30)
             
             print(f"Found {len(tweets)} recent tweets from @{username}")
             
-            # Add adaptive delay between accounts based on success
+            # Add delay between accounts
             if idx < total_accounts:
-                if len(tweets) > 0:
-                    # Shorter delay if we got tweets (5-10s)
-                    delay = random.uniform(5, 10)
-                else:
-                    # Longer delay if no tweets (15-30s)
-                    delay = random.uniform(15, 30)
                 print(f"Waiting {delay:.1f} seconds before next account...")
                 time.sleep(delay)
         except Exception as e:
