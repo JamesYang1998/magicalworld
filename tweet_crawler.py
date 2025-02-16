@@ -17,44 +17,34 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username, max_retries=5):
+def get_tweets(username, max_retries=7):
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Primary Nitter instances (most reliable)
+    # Most reliable Nitter instances (proven to work)
     primary_instances = [
-        'https://nitter.privacydev.net',  # Most reliable but rate-limited
-        'https://nitter.net',             # Good backup
-        'https://nitter.adminforge.de',    # Fast instance
-        'https://nitter.moomoo.me',       # Very reliable instance
-        'https://nitter.weiler.dev',      # German instance with good uptime
-        'https://nitter.smnz.de',         # Reliable German instance
-        'https://nitter.tux.pizza'        # Fast and reliable instance
+        'https://nitter.privacydev.net',   # Most reliable
+        'https://nitter.net',              # Official instance
+        'https://nitter.adminforge.de'     # Fast German instance
     ]
     
-    # Backup Nitter instances (try if primary fails)
+    # Backup instances that have worked before
     backup_instances = [
-        'https://nitter.fdn.fr',          # French instance
-        'https://nitter.pw',              # Fast and reliable
-        'https://nitter.mint.lgbt',       # Reliable instance
-        'https://nitter.esmailelbob.xyz', # Additional reliable
-        'https://nitter.poast.org',       # Extra backup
-        'https://nitter.d420.de',         # German instance
-        'https://nitter.caioalonso.com',  # Brazilian instance
-        'https://nitter.hostux.net',      # French backup
-        'https://nitter.projectsegfau.lt', # Very reliable instance
-        'https://nitter.in.projectsegfau.lt' # Indian mirror
+        'https://nitter.unixfox.eu',       # Reliable French instance
+        'https://nitter.projectsegfau.lt'  # Very reliable instance
     ]
     
     for attempt in range(max_retries):
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
-            time.sleep(45 + attempt * 15)  # Increasing delay between retries
+            time.sleep(60 + attempt * 30)  # Much longer increasing delay between retries
         
-        # Combine primary instances with a random selection of backup instances for each attempt
-        nitter_instances = primary_instances + random.sample(backup_instances, min(4, len(backup_instances)))
+        # Try primary instances first, then backups if needed
+        nitter_instances = primary_instances.copy()
+        if attempt > 2:  # Only use backup instances after a few primary-only attempts
+            nitter_instances.extend(backup_instances)
         random.shuffle(nitter_instances)
         
         for instance in nitter_instances:
