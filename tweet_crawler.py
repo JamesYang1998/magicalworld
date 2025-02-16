@@ -27,7 +27,9 @@ def get_tweets(username, max_retries=3):
     primary_instances = [
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
-        'https://nitter.adminforge.de'     # Fast instance
+        'https://nitter.adminforge.de',    # Fast instance
+        'https://nitter.unixfox.eu',      # Very reliable instance
+        'https://nitter.tiekoetter.com'   # German instance with good uptime
     ]
     
     # Backup Nitter instances (try if primary fails)
@@ -39,7 +41,9 @@ def get_tweets(username, max_retries=3):
         'https://nitter.poast.org',       # Extra backup
         'https://nitter.d420.de',         # German instance
         'https://nitter.caioalonso.com',  # Brazilian instance
-        'https://nitter.hostux.net'       # French backup
+        'https://nitter.hostux.net',      # French backup
+        'https://nitter.projectsegfau.lt', # Very reliable instance
+        'https://nitter.in.projectsegfau.lt' # Indian mirror
     ]
     
     for attempt in range(max_retries):
@@ -86,16 +90,16 @@ def get_tweets(username, max_retries=3):
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 23.5:  # Strict 24-hour check with buffer
+                        if hours_ago < 23.0:  # Even stricter 24-hour check with larger buffer
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
                                 'timestamp': tweet_datetime,
                             })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 23.5h limit)")
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 23h limit)")
                         else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23.5h)")
-                            if len(tweets) >= 20:  # Stop if we have enough tweets
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23h)")
+                            if len(tweets) >= 10:  # Stop earlier to avoid older tweets
                                 break
                     except Exception as e:
                         print(f"Error parsing tweet: {str(e)}")
