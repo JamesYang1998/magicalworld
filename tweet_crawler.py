@@ -19,37 +19,30 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username, max_retries=7):
+def get_tweets(username, max_retries=10):
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Most reliable Nitter instances (proven to work)
-    primary_instances = [
-        'https://nitter.privacydev.net',   # Most reliable
-        'https://nitter.net',              # Official instance
-        'https://nitter.adminforge.de'     # Fast German instance
+    # Single most reliable instance with proven track record
+    nitter_instances = [
+        'https://nitter.privacydev.net'    # Most reliable instance
     ]
     
-    # Backup instances that have worked before
-    backup_instances = [
-        'https://nitter.unixfox.eu',       # Reliable French instance
-        'https://nitter.projectsegfau.lt'  # Very reliable instance
-    ]
+    # No backup instances - focus on quality over quantity
+    backup_instances = []
     
     for attempt in range(max_retries):
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
             time.sleep(60 + attempt * 30)  # Much longer increasing delay between retries
         
-        # Try primary instances first, then backups if needed
-        nitter_instances = primary_instances.copy()
-        if attempt > 2:  # Only use backup instances after a few primary-only attempts
-            nitter_instances.extend(backup_instances)
-        random.shuffle(nitter_instances)
+        # Using single most reliable instance
+        instance_list = nitter_instances.copy()
+        random.shuffle(instance_list)
         
-        for instance in nitter_instances:
+        for instance in instance_list:
             url = f'{instance}/{username}'
             try:
                 print(f"Trying {instance} for @{username}...")
@@ -85,16 +78,16 @@ def get_tweets(username, max_retries=7):
                         time_diff = datetime.now() - tweet_datetime
                         hours_ago = time_diff.total_seconds()/3600
                         
-                        if hours_ago < 22.0:  # Even stricter 24-hour check with larger buffer
+                        if hours_ago < 21.5:  # Ultra-strict 24-hour check
                             tweets.append({
                                 'username': username,
                                 'content': content.text.strip(),
                                 'timestamp': tweet_datetime,
                             })
-                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 22h limit)")
+                            print(f"Found tweet from {hours_ago:.1f} hours ago (within 21.5h limit)")
                         else:
-                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 22h)")
-                            if len(tweets) >= 3:  # Stop even earlier to avoid older tweets
+                            print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 21.5h)")
+                            if len(tweets) >= 2:  # Stop very early to avoid older tweets
                                 break
                     except Exception as e:
                         print(f"Error parsing tweet: {str(e)}")
@@ -114,13 +107,18 @@ def get_tweets(username, max_retries=7):
     print(f"Failed to fetch tweets for {username} from all nitter instances")
     return []
 
-def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 22.0) -> List[Dict[str, Any]]:
+def clean_old_tweets(tweets: List[Dict[str, Any]], max_age: float = 21.5) -> List[Dict[str, Any]]:
     """Clean tweets list to ensure strict time compliance"""
     now = datetime.now()
-    return [
-        tweet for tweet in tweets
-        if (now - tweet['timestamp']).total_seconds() / 3600 < max_age
-    ]
+    cleaned = []
+    for tweet in tweets:
+        hours_old = (now - tweet['timestamp']).total_seconds() / 3600
+        if hours_old < max_age:
+            cleaned.append(tweet)
+            print(f"Verified tweet from {hours_old:.1f} hours ago (passed final check)")
+        else:
+            print(f"Removing tweet from {hours_old:.1f} hours ago in final check")
+    return cleaned
 
 def process_account(username: str) -> List[Dict[str, Any]]:
     """Process a single Twitter account and return its tweets"""
