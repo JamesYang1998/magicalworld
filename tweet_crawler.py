@@ -17,7 +17,7 @@ TWITTER_ACCOUNTS = [
     'MarketWatch', 'katexbt', '0xMantleIntern', 'aixbt_agent', 'Cbb0fe', 'Forbes'
 ]
 
-def get_tweets(username, max_retries=3):
+def get_tweets(username, max_retries=5):
     """Fetch tweets for a given username using nitter instances with retries"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
@@ -49,7 +49,7 @@ def get_tweets(username, max_retries=3):
     for attempt in range(max_retries):
         if attempt > 0:
             print(f"Retry attempt {attempt + 1}/{max_retries} for @{username}")
-            time.sleep(30)  # Longer delay between retries
+            time.sleep(45 + attempt * 15)  # Increasing delay between retries
         
         # Combine primary instances with a random selection of backup instances for each attempt
         nitter_instances = primary_instances + random.sample(backup_instances, min(4, len(backup_instances)))
@@ -63,10 +63,11 @@ def get_tweets(username, max_retries=3):
                 
                 if response.status_code == 429:  # Rate limited
                     print(f"Rate limited on {instance}, cooling down...")
-                    time.sleep(60)  # Longer cooldown for rate limits
+                    time.sleep(90)  # Much longer cooldown for rate limits
                     response = requests.get(url, headers=headers, timeout=15, verify=False)
                     if response.status_code != 200:
                         print(f"Still rate limited on {instance}, trying next instance...")
+                        time.sleep(30)  # Additional cooldown before next instance
                         continue
                 elif response.status_code != 200:
                     print(f"Failed to fetch tweets from {instance} for {username}. Status code: {response.status_code}")
