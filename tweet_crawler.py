@@ -39,9 +39,11 @@ def get_tweets(username):
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
         'https://nitter.adminforge.de',    # Fast instance
-        'https://nitter.bird.froth.zone',  # Very reliable instance
-        'https://nitter.catsarch.com',     # Fast and reliable
-        'https://nitter.perennialte.ch'    # Reliable instance
+        'https://nitter.fdn.fr',          # Very reliable French instance
+        'https://nitter.pw',              # Fast and reliable
+        'https://nitter.mint.lgbt',       # Reliable instance
+        'https://nitter.esmailelbob.xyz', # Additional reliable instance
+        'https://nitter.poast.org'        # Extra backup instance
     ]
     
     # Randomize order to distribute load
@@ -92,15 +94,17 @@ def get_tweets(username):
                     
                     time_diff = datetime.now() - tweet_datetime
                     hours_ago = time_diff.total_seconds()/3600
-                    if hours_ago < 23.9:  # Even stricter 24-hour check with buffer
+                    if hours_ago < 23.5:  # Even stricter 24-hour check with larger buffer
                         tweets.append({
                             'username': username,
                             'content': content.text.strip(),
                             'timestamp': tweet_datetime,
                         })
-                        print(f"Found tweet from {hours_ago:.1f} hours ago (within limit)")
+                        print(f"Found tweet from {hours_ago:.1f} hours ago (within 23.5h limit)")
                     else:
-                        print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23.9)")
+                        print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 23.5h)")
+                        if len(tweets) >= 20:  # Stop fetching if we have enough tweets and hit older ones
+                            break
                 except Exception as e:
                     print(f"Error parsing tweet for {username}: {str(e)}")
                     continue
