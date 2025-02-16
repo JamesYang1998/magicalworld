@@ -34,14 +34,14 @@ def get_tweets(username):
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
     }
     
-    # Use a mix of reliable Nitter instances
+    # Focus on most reliable Nitter instances
     nitter_instances = [
         'https://nitter.privacydev.net',  # Most reliable but rate-limited
         'https://nitter.net',             # Good backup
         'https://nitter.ktachibana.party', # Alternative
-        'https://nitter.in.projectsegfau.lt',
-        'https://nitter.d420.de',
-        'https://nitter.unixfox.eu'
+        'https://bird.habedieeh.re',      # Fast alternative
+        'https://nitter.hostux.net',      # Reliable instance
+        'https://nitter.adminforge.de'    # Fast instance
     ]
     
     # Randomize order to distribute load
@@ -91,14 +91,15 @@ def get_tweets(username):
                     tweet_datetime = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
                     
                     time_diff = datetime.now() - tweet_datetime
-                    if time_diff <= timedelta(hours=24):  # Strict 24-hour check
+                    hours_ago = time_diff.total_seconds()/3600
+                    if hours_ago <= 24.0:  # Strict 24-hour check
                         tweets.append({
                             'username': username,
                             'content': content.text.strip(),
                             'timestamp': tweet_datetime,
                         })
                     else:
-                        print(f"Skipping tweet from {time_diff.total_seconds()/3600:.1f} hours ago")
+                        print(f"Skipping tweet from {hours_ago:.1f} hours ago (limit: 24.0)")
                 except Exception as e:
                     print(f"Error parsing tweet for {username}: {str(e)}")
                     continue
