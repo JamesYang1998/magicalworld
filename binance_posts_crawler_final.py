@@ -7,27 +7,67 @@ import time
 import random
 import urllib3
 from typing import List, Dict, Any
+import re
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def get_timestamp_from_string(time_str: str) -> datetime:
-    """Convert timestamp string to datetime object"""
+def parse_number(text: str) -> int:
+    """Parse number from text with K/M suffixes"""
+    if not text:
+        return 0
+    
+    text = text.strip().lower()
+    multiplier = 1
+    
+    if 'k' in text:
+        multiplier = 1000
+        text = text.replace('k', '')
+    elif 'm' in text:
+        multiplier = 1000000
+        text = text.replace('m', '')
+    
     try:
-        return datetime.strptime(time_str, '%b %d, %Y · %I:%M %p UTC')
+        return int(float(text) * multiplier)
     except:
-        return datetime.now()
+        return 0
 
-def is_within_timeframe(timestamp: datetime, months: int = 3) -> bool:
-    """Check if timestamp is within specified months from now"""
-    cutoff_date = datetime.now() - timedelta(days=months*30)
-    return timestamp >= cutoff_date
+def extract_stats(soup: BeautifulSoup) -> Dict[str, int]:
+    """Extract engagement stats from tweet HTML"""
+    stats = {
+        'replies': 0,
+        'retweets': 0,
+        'likes': 0,
+        'quotes': 0
+    }
+    
+    try:
+        stats_div = soup.find('div', class_='tweet-stats')
+        if stats_div:
+            for stat in stats_div.find_all('div', class_='tweet-stat'):
+                stat_text = stat.get_text().strip()
+                stat_link = stat.find('a')
+                
+                if stat_link:
+                    stat_title = stat_link.get('title', '').lower()
+                    if 'repl' in stat_title:
+                        stats['replies'] = parse_number(stat_text)
+                    elif 'retweet' in stat_title:
+                        stats['retweets'] = parse_number(stat_text)
+                    elif 'like' in stat_title:
+                        stats['likes'] = parse_number(stat_text)
+                    elif 'quote' in stat_title:
+                        stats['quotes'] = parse_number(stat_text)
+    except:
+        pass
+    
+    return stats
 
 def get_posts(username: str, months: int = 3) -> List[Dict[str, Any]]:
     """Fetch all types of posts using Nitter RSS feeds"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml,application/xml;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5'
     }
     
@@ -39,44 +79,53 @@ def get_posts(username: str, months: int = 3) -> List[Dict[str, Any]]:
         'https://nitter.bird.froth.zone',
         'https://nitter.datura.network',
         'https://nitter.tux.pizza',
-        'https://nitter.salastil.com',
-        'https://nitter.x86-64-unknown-linux-gnu.zip'
+        'https://nitter.salastil.com'
     ]
     
     posts = []
     page = 1
-    max_pages = 100  # Increased page limit for more historical data
+    max_pages = 100
     
     while page <= max_pages:
         found_working_instance = False
         
         for instance in instances:
             try:
-                url = f"{instance}/{username}/rss"
+                url = f"{instance}/{username}"
                 if page > 1:
-                    url = f"{instance}/{username}/page/{page}/rss"
+                    url = f"{instance}/{username}/page/{page}"
                 print(f"Trying {instance} page {page}...")
                 
                 response = requests.get(url, headers=headers, timeout=15, verify=False)
                 
                 if response.status_code != 200:
-                    print(f"Failed to fetch RSS feed from {instance}. Status: {response.status_code}")
+                    print(f"Failed to fetch page from {instance}. Status: {response.status_code}")
                     continue
                 
-                feed = feedparser.parse(response.text)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                tweets = soup.find_all('div', class_='timeline-item')
                 
-                if not feed.entries:
-                    print(f"No entries found in RSS feed from {instance} page {page}")
+                if not tweets:
+                    print(f"No tweets found on {instance} page {page}")
                     continue
                 
-                print(f"Found {len(feed.entries)} entries in RSS feed")
+                print(f"Found {len(tweets)} tweets")
                 found_posts = False
                 all_old = True
                 
-                for entry in feed.entries:
+                for tweet in tweets:
                     try:
-                        # Parse timestamp
-                        published = datetime(*entry.published_parsed[:6])
+                        # Get timestamp
+                        time_element = tweet.find('span', class_='tweet-date')
+                        if not time_element:
+                            continue
+                        
+                        time_link = time_element.find('a')
+                        if not time_link or 'title' not in time_link.attrs:
+                            continue
+                        
+                        tweet_time = time_link['title']
+                        published = datetime.strptime(tweet_time, '%b %d, %Y · %I:%M %p UTC')
                         
                         # Check timeframe
                         if published < datetime.now() - timedelta(days=90):
@@ -84,75 +133,42 @@ def get_posts(username: str, months: int = 3) -> List[Dict[str, Any]]:
                         
                         all_old = False
                         
-                        # Get content and type
-                        content = entry.description
-                        title = entry.title
+                        # Get content
+                        content_div = tweet.find('div', class_='tweet-content')
+                        if not content_div:
+                            continue
                         
-                        # Determine post type
+                        content = content_div.get_text().strip()
+                        
+                        # Determine post type and extract original author
                         post_type = 'Post'
-                        if 'R to @' in title:
-                            post_type = 'Reply'
-                        elif 'RT by @' in title:
-                            post_type = 'Retweet'
-                        elif 'QT by @' in title:
-                            post_type = 'Quote Tweet'
-                        
-                        # Extract engagement metrics from content
-                        engagement = {
-                            'replies': 0,
-                            'retweets': 0,
-                            'likes': 0,
-                            'quotes': 0
-                        }
-                        
-                        # Parse engagement metrics from HTML content
-                        soup = BeautifulSoup(content, 'html.parser')
-                        stats = soup.find_all('span', class_='tweet-stat')
-                        
-                        for stat in stats:
-                            stat_text = stat.get_text().strip()
-                            stat_title = stat.get('title', '').lower()
-                            
-                            try:
-                                value = stat_text.strip().lower()
-                                multiplier = 1
-                                
-                                if 'k' in value:
-                                    multiplier = 1000
-                                    value = value.replace('k', '')
-                                elif 'm' in value:
-                                    multiplier = 1000000
-                                    value = value.replace('m', '')
-                                
-                                value = float(value) * multiplier
-                                
-                                if 'repl' in stat_title:
-                                    engagement['replies'] = int(value)
-                                elif 'retweet' in stat_title:
-                                    engagement['retweets'] = int(value)
-                                elif 'like' in stat_title:
-                                    engagement['likes'] = int(value)
-                                elif 'quote' in stat_title:
-                                    engagement['quotes'] = int(value)
-                            except:
-                                continue
-                        
-                        # Clean content
-                        clean_content = soup.get_text().strip()
-                        
-                        # Get original author for retweets
                         original_author = None
-                        if post_type in ['Retweet', 'Quote Tweet']:
-                            try:
-                                author_match = soup.find('div', class_='retweet-header')
-                                if author_match:
-                                    original_author = author_match.get_text().strip()
-                            except:
-                                pass
+                        
+                        reply_div = tweet.find('div', class_='replying-to')
+                        retweet_header = tweet.find('div', class_='retweet-header')
+                        quote_link = tweet.find('a', class_='quote-link')
+                        
+                        if reply_div:
+                            post_type = 'Reply'
+                            reply_link = reply_div.find('a')
+                            if reply_link:
+                                original_author = reply_link.get_text().strip().replace('@', '')
+                        elif retweet_header:
+                            post_type = 'Retweet'
+                            rt_text = retweet_header.get_text().strip()
+                            rt_match = re.search(r'RT by @\w+: (@\w+):', rt_text)
+                            if rt_match:
+                                original_author = rt_match.group(1).replace('@', '')
+                        elif quote_link:
+                            post_type = 'Quote Tweet'
+                            original_author = quote_link.get_text().strip().replace('@', '')
+                        
+                        # Get engagement metrics
+                        engagement = extract_stats(tweet)
                         
                         posts.append({
                             'timestamp': published,
-                            'content': clean_content,
+                            'content': content,
                             'type': post_type,
                             'original_author': original_author,
                             'replies': engagement['replies'],
@@ -162,9 +178,12 @@ def get_posts(username: str, months: int = 3) -> List[Dict[str, Any]]:
                         })
                         found_posts = True
                         print(f"Found {post_type} from {published}")
+                        if original_author:
+                            print(f"Original author: @{original_author}")
+                        print(f"Engagement: {engagement}")
                     
                     except Exception as e:
-                        print(f"Error parsing entry: {str(e)}")
+                        print(f"Error parsing tweet: {str(e)}")
                         continue
                 
                 if found_posts:
