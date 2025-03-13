@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
 
 const LandingPage = () => {
@@ -61,18 +61,7 @@ const LandingPage = () => {
           </div>
         </div>
         
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            已有账户？ 
-            <Link to="/login" className="text-blue-600 hover:text-blue-800 ml-1">
-              登录
-            </Link>
-            <span className="mx-2">|</span>
-            <Link to="/register" className="text-blue-600 hover:text-blue-800">
-              注册
-            </Link>
-          </p>
-        </div>
+        {/* Removed login/register links as per user request */}
       </div>
     </div>
   );
