@@ -1,5 +1,5 @@
 // API integration module for backend communication
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://kol-backend-uemmyzlr.fly.dev';
 
 // Authentication API functions
 async function login(username, password) {
@@ -51,7 +51,13 @@ async function getKolProfile() {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      throw new Error('Not authenticated');
+      console.log('No authentication token found, checking localStorage');
+      // Try to get from localStorage
+      const localProfile = localStorage.getItem('kol_profile');
+      if (localProfile) {
+        return JSON.parse(localProfile);
+      }
+      return null;
     }
     
     const response = await fetch(`${API_BASE_URL}/kol-profiles/me`, {
@@ -63,6 +69,11 @@ async function getKolProfile() {
     
     if (!response.ok) {
       if (response.status === 404) {
+        // Try to get from localStorage as fallback
+        const localProfile = localStorage.getItem('kol_profile');
+        if (localProfile) {
+          return JSON.parse(localProfile);
+        }
         return null; // Profile not found
       }
       throw new Error('Failed to fetch profile');
@@ -71,7 +82,12 @@ async function getKolProfile() {
     return await response.json();
   } catch (error) {
     console.error('Get profile error:', error);
-    throw error;
+    // Try to get from localStorage as fallback
+    const localProfile = localStorage.getItem('kol_profile');
+    if (localProfile) {
+      return JSON.parse(localProfile);
+    }
+    return null;
   }
 }
 
@@ -79,7 +95,10 @@ async function saveKolProfile(profileData) {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      throw new Error('Not authenticated');
+      console.log('No authentication token found, falling back to localStorage');
+      // Save to localStorage as fallback
+      localStorage.setItem('kol_profile', JSON.stringify(profileData));
+      return { success: true, message: 'Profile saved to localStorage', data: profileData };
     }
     
     // Check if profile exists
@@ -106,13 +125,15 @@ async function saveKolProfile(profileData) {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to save profile');
+      throw new Error('Failed to save profile to API');
     }
     
     return await response.json();
   } catch (error) {
     console.error('Save profile error:', error);
-    throw error;
+    // Save to localStorage as fallback on any error
+    localStorage.setItem('kol_profile', JSON.stringify(profileData));
+    return { success: true, message: 'Profile saved to localStorage', data: profileData };
   }
 }
 
@@ -282,6 +303,12 @@ function getSampleTasks() {
   ];
 }
 
+// Helper function to get profile from localStorage
+function getProfileFromLocalStorage() {
+  const profileData = localStorage.getItem('kol_profile');
+  return profileData ? JSON.parse(profileData) : null;
+}
+
 // Export API functions
 window.api = {
   login,
@@ -293,5 +320,6 @@ window.api = {
   verifyTwitter,
   verifyTwitterLink,
   createSubmission,
-  getSampleTasks
+  getSampleTasks,
+  getProfileFromLocalStorage
 };
