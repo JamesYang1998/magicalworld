@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ACF Spark</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="css/custom.css?v=2" rel="stylesheet">
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .btn-standard, button.btn-standard {
+      width: 120px !important;
+      height: 40px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center;
+      padding: 0.5rem 1rem;
+      background-color: #2563eb !important;
+      color: white !important;
+      border-radius: 0.375rem;
+      transition: background-color 0.2s;
+    }
+    .btn-standard:hover, button.btn-standard:hover {
+      background-color: #1d4ed8 !important;
+    }
+    .btn-standard.verified {
+      background-color: #10b981 !important;
+    }
+    .btn-standard.verified:hover {
+      background-color: #059669 !important;
+    }
+  </style>
+  <script src="js/twitter-auth.js"></script>
+  <script src="js/twitter-auth-api.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="app">
+    <!-- Content will be loaded by JavaScript -->
+  </div>
+
+  <script>
+    // Define enums
+    const UserRole = {
+      KOL: 'kol',
+      PUBLISHER: 'publisher',
+      ADMIN: 'admin'
+    };
+
+    const PlatformType = {
+      TWITTER: 'Twitter',
+      INSTAGRAM: 'Instagram',
+      YOUTUBE: 'YouTube',
+      TIKTOK: 'TikTok'
+    };
+
+    const TaskStatus = {
+      OPEN: 'open',
+      IN_PROGRESS: 'in_progress',
+      SUBMITTED: 'submitted',
+      APPROVED: 'approved',
+      REJECTED: 'rejected'
+    };
+
+    // Sample tasks data
+    function getSampleTasks() {
+      return [
+        {
+          id: -1,
+          title: 'Sonic 新产品宣发活动',
+          description: 'Sonic项目需要对新款游戏机进行社交媒体宣传，重点突出其低延迟和高音质特性。',
+          requirements: '需要至少一条产品使用图片和一条视频展示产品特性。内容需包含官方标签 #SonicAudio #GamingRevolution',
+          platform: PlatformType.TWITTER,
+          platform_requirements: '账户粉丝至少1000名粉丝，以社交内容以科技游戏为主。',
+          commission: 400,
+          word_count: 200,
+          status: TaskStatus.OPEN,
+          created_at: new Date().toISOString(),
+          publisher_id: -1,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: -2,
+          title: 'CryptoWave 市场活动推广',
+          description: 'CryptoWave平台寻找KOL推广其新的DeFi产品，需要解释产品功能并吸引潜在用户。',
+          requirements: '创建3-5分钟视频，详细介绍CryptoWave的DeFi产品功能和优势。包含注册链接。',
+          platform: PlatformType.YOUTUBE,
+          platform_requirements: '频道订阅者至少5000人，内容以加密货币或金融为主。',
+          commission: 600,
+          word_count: 300,
+          status: TaskStatus.OPEN,
+          created_at: new Date().toISOString(),
+          publisher_id: -2,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: -3,
+          title: 'FashionPlus 夏季系列宣传',
+          description: 'FashionPlus寻找时尚博主推广其2023夏季服装系列，展示产品并分享配搭建议。',
+          requirements: '发布至少3张高质量照片，展示FashionPlus夏季系列搭配。包含品牌标签和专属代码。',
+          platform: PlatformType.INSTAGRAM,
+          platform_requirements: '账户粉丝至少3000人，内容以时尚生活方式为主。',
+          commission: 350,
+          word_count: 150,
+          status: TaskStatus.OPEN,
+          created_at: new Date().toISOString(),
+          publisher_id: -3,
+          updated_at: new Date().toISOString(),
+        }
+      ];
+    }
+
+    // Render landing page
+    function renderLandingPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+          <div class="max-w-4xl w-full p-6">
+            <div class="text-center mb-10">
+              <h1 class="text-4xl font-extrabold text-blue-600">ACF Spark</h1>
+              <p class="mt-3 text-xl text-gray-600">
+                Connect KOLs with publishers for content creation
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- KOL Card -->
+              <div 
+                class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                id="kol-card"
+              >
+                <div class="p-8">
+                  <h2 class="text-2xl font-bold text-blue-600 mb-4">我是 KOL</h2>
+                  <p class="text-gray-600 mb-6">
+                    作为意见领袖，您可以接受品牌任务，在社交媒体上分享内容并获得报酬。
+                  </p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">支持 Twitter, Instagram, YouTube 等平台</span>
+                    <button class="btn-standard landing-btn" style="width:120px !important; height:40px !important; display:flex !important; align-items:center !important; justify-content:center !important; background-color:#2563eb !important;">
+                      查看任务
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Publisher Card -->
+              <div 
+                class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                id="publisher-card"
+              >
+                <div class="p-8">
+                  <h2 class="text-2xl font-bold text-blue-600 mb-4">我是发布者</h2>
+                  <p class="text-gray-600 mb-6">
+                    作为品牌或营销机构，您可以发布任务，寻找合适的KOL为您的产品或服务进行推广。
+                  </p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">轻松管理营销活动</span>
+                    <button class="btn-standard landing-btn" style="width:120px !important; height:40px !important; display:flex !important; align-items:center !important; justify-content:center !important; background-color:#2563eb !important;">
+                      发布任务
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add event listeners
+      document.getElementById('kol-card').addEventListener('click', () => {
+        localStorage.setItem('selectedRole', UserRole.KOL);
+        renderSampleTasksPage();
+      });
+
+      document.getElementById('publisher-card').addEventListener('click', () => {
+        localStorage.setItem('selectedRole', UserRole.PUBLISHER);
+        renderPublisherPage();
+      });
+    }
+
+    // Create role toggle component
+    function createRoleToggle() {
+      const selectedRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+      const isPublisher = selectedRole === UserRole.PUBLISHER;
+      
+      return `
+        <div class="flex items-center bg-gray-200 rounded-full p-1 cursor-pointer" id="role-toggle-container">
+          <div class="flex items-center ${isPublisher ? '' : 'bg-white rounded-full shadow'} px-3 py-1 transition-all">
+            <span class="${isPublisher ? 'text-gray-600' : 'text-blue-600 font-medium'}">我是 KOL</span>
+          </div>
+          <div class="flex items-center ${isPublisher ? 'bg-white rounded-full shadow' : ''} px-3 py-1 transition-all">
+            <span class="${isPublisher ? 'text-blue-600 font-medium' : 'text-gray-600'}">我是发布者</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render sample tasks page for KOLs
+    function renderSampleTasksPage() {
+      const selectedRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+      const tasks = getSampleTasks();
+      
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="min-h-screen bg-gray-100">
+          <!-- Header -->
+          <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div class="flex justify-between h-16">
+                <div class="flex">
+                  <div class="flex-shrink-0 flex items-center">
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  ${createRoleToggle()}
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main>
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <div class="mb-6">
+                <div class="flex items-center justify-between">
+                  <h1 class="text-2xl font-bold">KOL 个人中心</h1>
+                </div>
+                <p class="mt-2 text-gray-600">
+                  在这里您可以管理您的KOL个人资料和接单设置。
+                </p>
+              </div>
+              
+              <!-- KOL Profile Section with BSC Wallet Address -->
+              <div class="mb-6 bg-white shadow rounded-lg overflow-hidden">
+                <div class="p-6">
+                  <h2 class="text-xl font-semibold mb-6">KOL 个人资料</h2>
+                  <div class="grid grid-cols-1 gap-5">
+                    <!-- Single Column Layout -->
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">平台选择</label>
+                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Twitter">Twitter</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="YouTube">YouTube</option>
+                        <option value="TikTok">TikTok</option>
+                      </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">平台账号链接</label>
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/yourusername">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">当前粉丝数</label>
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：5000">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">主要关注内容</label>
+                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Meme">Meme</option>
+                        <option value="投研">投研</option>
+                        <option value="教学">教学</option>
+                        <option value="其他">其他</option>
+                      </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">单条报价 (USDT)</label>
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：400">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">收款钱包地址</label>
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="BSC钱包地址">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">验证 Twitter 账户</label>
+                      <button class="btn-standard" id="verify-twitter-btn">
+                        verify
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mt-6 flex justify-end">
+                    <button id="save-profile-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                      保存资料
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+
+
+            </div>
+          </main>
+          
+          <!-- Footer -->
+          <footer class="bg-white border-t border-gray-200 py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <p class="text-center text-sm text-gray-500">
+                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+              </p>
+            </div>
+          </footer>
+        </div>
+      `;
+
+      // Add event listener for back button to always go to homepage
+      document.getElementById('back-to-home').addEventListener('click', function() {
+        window.location.hash = '#/home';
+      });
+      
+      // Add event listener for role toggle
+      document.getElementById('role-toggle-container').addEventListener('click', function() {
+        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+        if (currentRole === UserRole.KOL) {
+          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
+          renderPublisherPage();
+        } else {
+          localStorage.setItem('selectedRole', UserRole.KOL);
+          renderSampleTasksPage();
+        }
+      });
+      
+      // Add event listener for Twitter verification button
+      const verifyTwitterBtn = document.getElementById('verify-twitter-btn');
+      if (verifyTwitterBtn) {
+        verifyTwitterBtn.addEventListener('click', function() {
+          // Open Twitter authorization page
+          window.location.href = 'twitter-auth.html';
+        });
+      }
+      
+      // Add event listener for save profile button
+      const saveProfileBtn = document.getElementById('save-profile-btn');
+      if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', async function() {
+          try {
+            // Get form data
+            const platformSelect = document.querySelector('select[class*="border-gray-300"]:first-of-type');
+            const platformLinkInput = document.querySelector('input[placeholder*="平台账号链接"]');
+            const followerCountInput = document.querySelector('input[placeholder*="例如：5000"]');
+            const contentFocusSelect = document.querySelector('select[class*="border-gray-300"]:nth-of-type(2)');
+            const priceInput = document.querySelector('input[placeholder*="例如：400"]');
+            const walletInput = document.querySelector('input[placeholder*="BSC钱包地址"]');
+            
+            if (!platformSelect || !platformLinkInput || !followerCountInput || 
+                !contentFocusSelect || !priceInput || !walletInput) {
+              throw new Error('无法获取表单数据');
+            }
+            
+            const profileData = {
+              platform: platformSelect.value,
+              platform_link: platformLinkInput.value,
+              followers_count: parseInt(followerCountInput.value) || 0,
+              content_focus: contentFocusSelect.value,
+              price_per_post: parseInt(priceInput.value) || 0,
+              wallet_address: walletInput.value
+            };
+            
+            // Save profile data using API if available
+            if (window.api && typeof window.api.saveKolProfile === 'function') {
+              await window.api.saveKolProfile(profileData);
+            } else {
+              // Fallback to localStorage
+              localStorage.setItem('kol_profile', JSON.stringify(profileData));
+            }
+            
+            // Show success notification
+            window.twitterAuth.showNotification('个人资料保存成功！', 'success');
+            
+            // Redirect to home page
+            setTimeout(() => {
+              window.location.hash = '#/home';
+            }, 1000); // Delay to show notification
+          } catch (error) {
+            console.error('保存个人资料失败:', error);
+            window.twitterAuth.showNotification('保存个人资料失败，请重试。', 'error');
+          }
+        });
+      }
+      
+      // Check if returning from Twitter auth
+      const twitterAuthSuccess = localStorage.getItem('twitter_auth_success') === 'true';
+      if (twitterAuthSuccess) {
+        // Clear the flag
+        localStorage.removeItem('twitter_auth_success');
+        // Get stored Twitter data
+        const twitterData = JSON.parse(localStorage.getItem('twitter_auth_data'));
+        
+        if (twitterData) {
+          // Update follower count field
+          const followerCountInput = document.querySelector('input[placeholder="例如：5000"]');
+          if (followerCountInput) {
+            followerCountInput.value = twitterData.followers_count;
+          }
+          
+          // Update verify button to show verified status
+          if (verifyTwitterBtn) {
+            verifyTwitterBtn.innerHTML = '✓ 已验证';
+            verifyTwitterBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            verifyTwitterBtn.classList.add('verified');
+            verifyTwitterBtn.disabled = true;
+          }
+          
+          // Show success notification
+          showNotification('Twitter账户验证成功！', 'success');
+        }
+      }
+    }
+
+    // Render publisher page with business display and input form
+    function renderPublisherPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="min-h-screen bg-gray-100">
+          <!-- Header -->
+          <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div class="flex justify-between h-16">
+                <div class="flex">
+                  <div class="flex-shrink-0 flex items-center">
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  ${createRoleToggle()}
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main>
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <div class="mb-6">
+                <div class="flex items-center justify-between">
+                  <h1 class="text-2xl font-bold">发布营销任务</h1>
+                </div>
+                <p class="mt-2 text-gray-600">
+                  在这里您可以发布营销任务，寻找合适的KOL为您的产品或服务进行推广。
+                </p>
+              </div>
+              
+              <!-- Business Display Section -->
+              <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4">业务展示</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <!-- Business Card 1 -->
+                  <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="p-5">
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">社交媒体推广</h3>
+                      <p class="text-gray-600 text-sm mb-3">
+                        通过KOL在各大社交媒体平台上的影响力，为您的产品或服务获得更多曝光和关注。
+                      </p>
+                      <div class="flex items-center text-sm text-gray-500">
+                        <span>适用平台: Twitter, Instagram, TikTok</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Business Card 2 -->
+                  <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="p-5">
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">内容创作</h3>
+                      <p class="text-gray-600 text-sm mb-3">
+                        由专业KOL为您创作高质量内容，包括视频、图文等形式，展示产品特性和优势。
+                      </p>
+                      <div class="flex items-center text-sm text-gray-500">
+                        <span>适用平台: YouTube, 博客</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Business Card 3 -->
+                  <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="p-5">
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">品牌合作</h3>
+                      <p class="text-gray-600 text-sm mb-3">
+                        与KOL建立长期合作关系，通过持续的内容输出，提升品牌知名度和用户信任度。
+                      </p>
+                      <div class="flex items-center text-sm text-gray-500">
+                        <span>适用平台: 全平台</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Input Form Section -->
+              <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="p-6">
+                  <h2 class="text-xl font-semibold mb-4">发布新任务</h2>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div>
+                      <!-- Task Title -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">任务标题</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：新产品宣发活动">
+                      </div>
+                      
+                      <!-- Task Description -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
+                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="详细描述您的营销需求..."></textarea>
+                      </div>
+                      
+                      <!-- Requirements -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">内容要求</label>
+                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="对内容的具体要求，如字数、格式等..."></textarea>
+                      </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div>
+                      <!-- Platform -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">目标平台</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                          <option value="">请选择平台</option>
+                          <option value="Twitter">Twitter</option>
+                          <option value="Instagram">Instagram</option>
+                          <option value="YouTube">YouTube</option>
+                          <option value="TikTok">TikTok</option>
+                        </select>
+                      </div>
+                      
+                      <!-- Platform Requirements -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">平台要求</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：账户粉丝数要求、内容方向等">
+                      </div>
+                      
+                      <!-- Commission -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">佣金 (USDT)</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：400">
+                      </div>
+                      
+                      <!-- Word Count -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">字数要求</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：200">
+                      </div>
+                      
+                      <!-- Payment Information -->
+                      <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">支付信息</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="BSC钱包地址">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Submit Button -->
+                  <div class="mt-6 flex justify-end">
+                    <button id="publish-task-btn" class="btn-standard">
+                      发布任务
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+          
+          <!-- Footer -->
+          <footer class="bg-white border-t border-gray-200 py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <p class="text-center text-sm text-gray-500">
+                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+              </p>
+            </div>
+          </footer>
+        </div>
+      `;
+
+      // Add event listener for back button to always go to homepage
+      document.getElementById('back-to-home').addEventListener('click', function() {
+        window.location.hash = '#/home';
+      });
+      
+      // Add event listener for role toggle
+      document.getElementById('role-toggle-container').addEventListener('click', function() {
+        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+        if (currentRole === UserRole.PUBLISHER) {
+          localStorage.setItem('selectedRole', UserRole.KOL);
+          renderSampleTasksPage();
+        } else {
+          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
+          renderPublisherPage();
+        }
+      });
+      
+      // Add event listener for task submission button
+      document.getElementById('publish-task-btn').addEventListener('click', function() {
+        // Collect form data
+        const taskTitle = document.querySelector('input[placeholder="例如：新产品宣发活动"]').value;
+        const taskDescription = document.querySelector('textarea[placeholder="详细描述您的营销需求..."]').value;
+        const contentRequirements = document.querySelector('textarea[placeholder="对内容的具体要求，如字数、格式等..."]').value;
+        const platform = document.querySelector('select').value;
+        const platformRequirements = document.querySelector('input[placeholder="例如：账户粉丝数要求、内容方向等"]').value;
+        const commission = document.querySelector('input[placeholder="例如：400"]').value;
+        const wordCount = document.querySelector('input[placeholder="例如：200"]').value;
+        const paymentInfo = document.querySelector('input[placeholder="BSC钱包地址"]').value;
+        
+        // Validate form data
+        if (!taskTitle || !taskDescription || !contentRequirements || !platform || !platformRequirements || !commission) {
+          showNotification('请填写所有必填字段', 'error');
+          return;
+        }
+        
+        // Create task object
+        const newTask = {
+          title: taskTitle,
+          description: taskDescription,
+          requirements: contentRequirements,
+          platform: platform,
+          platform_requirements: platformRequirements,
+          commission: parseInt(commission),
+          word_count: parseInt(wordCount) || 0,
+          payment_info: paymentInfo,
+          status: 'open',
+          created_at: new Date().toISOString()
+        };
+        
+        // Store the new task in localStorage
+        localStorage.setItem('newlyCreatedTask', JSON.stringify(newTask));
+        
+        // Show success notification
+        showNotification('任务发布成功！', 'success');
+        
+        // Redirect to homepage
+        window.location.hash = '#/home';
+      });
+    }
+
+    // Function to show notification
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-blue-500'} text-white z-50`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    // Render home page with sample ad campaigns
+    function renderHomePage() {
+      // Check if there's a newly created task
+      const newlyCreatedTask = localStorage.getItem('newlyCreatedTask');
+      let firstTask = null;
+      
+      if (newlyCreatedTask) {
+        firstTask = JSON.parse(newlyCreatedTask);
+        // Clear the localStorage item to prevent showing it again after page refresh
+        localStorage.removeItem('newlyCreatedTask');
+      }
+      
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="min-h-screen bg-gray-100">
+          <!-- Header -->
+          <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div class="flex justify-between h-16">
+                <div class="flex">
+                  <div class="flex-shrink-0 flex items-center">
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  ${createRoleToggle()}
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main>
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <div class="mb-6">
+                <div class="flex items-center justify-between">
+                  <h1 class="text-2xl font-bold">首页</h1>
+                </div>
+                <p class="mt-2 text-gray-600">
+                  浏览当前可接的营销任务，选择适合您的任务进行申请。
+                </p>
+              </div>
+              
+              <!-- Sample Ad Campaigns -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- First Banner - Newly Created Task or Default -->
+                ${firstTask ? `
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                      <h2 class="text-xl font-semibold text-blue-600">${firstTask.title}</h2>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${firstTask.platform}</span>
+                    </div>
+                    <div class="mb-4">
+                      <p class="text-gray-700 mb-3">
+                        ${firstTask.description}
+                      </p>
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="text-gray-600">${firstTask.commission} USDT</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">KOL数量:</span>
+                          <span class="text-gray-600">待定</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">字数要求:</span>
+                          <span class="text-gray-600">${firstTask.word_count > 0 ? firstTask.word_count : '不限'}</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="text-gray-600">${firstTask.platform_requirements}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                      <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
+                      <p class="text-gray-600 text-sm">
+                        ${firstTask.requirements}
+                      </p>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                      <button class="btn-standard">
+                        申请任务
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                ` : `
+                <!-- Sonic Twitter Campaign -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                      <h2 class="text-xl font-semibold text-blue-600">Sonic Twitter Campaign</h2>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter</span>
+                    </div>
+                    <div class="mb-4">
+                      <p class="text-gray-700 mb-3">
+                        Sonic 游戏新版本发布，需要KOL在Twitter上进行宣传推广，强调游戏的新特性和玩法。
+                      </p>
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="text-gray-600">400 USDT</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">KOL数量:</span>
+                          <span class="text-gray-600">20人</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">字数要求:</span>
+                          <span class="text-gray-600">200-300字</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="text-gray-600">5000+</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                      <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
+                      <p class="text-gray-600 text-sm">
+                        推文需包含Sonic游戏的新特性介绍，如新角色、新关卡和多人游戏模式。需要使用官方提供的游戏截图，并附上游戏下载链接。推文语调应轻松活泼，与Sonic品牌形象一致。
+                      </p>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                      <button class="btn-standard">
+                        申请任务
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                `}
+                
+                <!-- Crypto Exchange Campaign -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                      <h2 class="text-xl font-semibold text-blue-600">Binance Trading Competition</h2>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">全平台</span>
+                    </div>
+                    <div class="mb-4">
+                      <p class="text-gray-700 mb-3">
+                        Binance交易所举办交易大赛，需要KOL在各大社交媒体平台宣传活动详情和参与方式。
+                      </p>
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="text-gray-600">600 USDT</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">KOL数量:</span>
+                          <span class="text-gray-600">15人</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">字数要求:</span>
+                          <span class="text-gray-600">300-500字</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="text-gray-600">10000+</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                      <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
+                      <p class="text-gray-600 text-sm">
+                        内容需详细介绍交易大赛的规则、奖励机制和参与方式。强调Binance平台的安全性和流动性优势。需要引导用户注册Binance账户并参与活动。可以分享个人使用Binance的经验和心得。
+                      </p>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                      <button class="btn-standard">
+                        申请任务
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- NFT Project -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                      <h2 class="text-xl font-semibold text-blue-600">Azuki NFT Collection</h2>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter/Instagram</span>
+                    </div>
+                    <div class="mb-4">
+                      <p class="text-gray-700 mb-3">
+                        Azuki NFT新系列即将发布，需要KOL在Twitter和Instagram上进行预热宣传，吸引潜在收藏者关注。
+                      </p>
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="text-gray-600">500 USDT</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">KOL数量:</span>
+                          <span class="text-gray-600">10人</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">字数要求:</span>
+                          <span class="text-gray-600">不限</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="text-gray-600">8000+</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                      <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
+                      <p class="text-gray-600 text-sm">
+                        内容需展示Azuki NFT的艺术价值和社区文化，分享官方提供的NFT预览图，并介绍铸造日期、价格和获取方式。可以分享对NFT市场的见解和Azuki项目的未来发展前景。
+                      </p>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                      <button class="btn-standard">
+                        申请任务
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- DeFi Project -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                      <h2 class="text-xl font-semibold text-blue-600">Aave V3 功能介绍</h2>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">YouTube</span>
+                    </div>
+                    <div class="mb-4">
+                      <p class="text-gray-700 mb-3">
+                        Aave V3版本上线，需要KOL制作YouTube视频详细介绍新功能和使用方法，吸引更多用户使用该DeFi平台。
+                      </p>
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="text-gray-600">800 USDT</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">KOL数量:</span>
+                          <span class="text-gray-600">5人</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">视频长度:</span>
+                          <span class="text-gray-600">10-15分钟</span>
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="text-gray-600">15000+</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                      <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
+                      <p class="text-gray-600 text-sm">
+                        视频需详细演示Aave V3的新功能，如跨链借贷、隔离模式和高效模式等。需要进行实际操作演示，并解释各功能的优势和适用场景。内容应既适合DeFi新手理解，又能为资深用户提供有价值的信息。
+                      </p>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                      <button class="btn-standard">
+                        申请任务
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+          
+          <!-- Footer -->
+          <footer class="bg-white border-t border-gray-200 py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <p class="text-center text-sm text-gray-500">
+                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+              </p>
+            </div>
+          </footer>
+        </div>
+      `;
+
+      // Add event listener for back button to always go to homepage
+      document.getElementById('back-to-home').addEventListener('click', function() {
+        window.location.hash = '#/home';
+      });
+      
+      // Add event listener for role toggle
+      document.getElementById('role-toggle-container').addEventListener('click', function() {
+        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+        if (currentRole === UserRole.KOL) {
+          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
+          renderPublisherPage();
+        } else {
+          localStorage.setItem('selectedRole', UserRole.KOL);
+          renderSampleTasksPage();
+        }
+      });
+    }
+
+    // Initialize the app
+    window.onload = function() {
+      // Check if we have a hash route
+      const hashPath = window.location.hash.split('?')[0]; // Get the path part without query params
+      
+      if (hashPath === '#/sample-tasks') {
+        renderSampleTasksPage();
+      } else if (hashPath === '#/publisher') {
+        renderPublisherPage();
+      } else if (hashPath === '#/kol-profile') {
+        renderSampleTasksPage(); // KOL profile is part of the sample tasks page
+      } else if (hashPath === '#/home') {
+        renderHomePage(); // New home page
+      } else {
+        renderLandingPage();
+      }
+
+      // Handle hash changes
+      window.addEventListener('hashchange', function() {
+        const hashPath = window.location.hash.split('?')[0]; // Get the path part without query params
+        
+        if (hashPath === '#/sample-tasks') {
+          renderSampleTasksPage();
+        } else if (hashPath === '#/publisher') {
+          renderPublisherPage();
+        } else if (hashPath === '#/kol-profile') {
+          renderSampleTasksPage(); // KOL profile is part of the sample tasks page
+        } else if (hashPath === '#/home') {
+          renderHomePage(); // New home page
+        } else {
+          renderLandingPage();
+        }
+      });
+    };
+  </script>
+
+  <!-- API Integration Script -->
+  <script src="js/api.js"></script>
+  
+  <script>
+    // Force cache refresh
+    document.addEventListener('DOMContentLoaded', function() {
+      const timestamp = new Date().getTime();
+      const buttons = document.querySelectorAll('.btn-standard');
+      buttons.forEach(button => {
+        button.setAttribute('data-version', timestamp);
+      });
+    });
+  </script>
+</body>
+</html>
