@@ -319,17 +319,8 @@
       // Add event listener for back button to always go to homepage
       document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
-      // Add event listener for role toggle
-      document.getElementById('role-toggle-container').addEventListener('click', function() {
-        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
-        if (currentRole === UserRole.KOL) {
-          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
-          renderPublisherPage();
-        } else {
-          localStorage.setItem('selectedRole', UserRole.KOL);
-          renderSampleTasksPage();
-        }
-      });
+      // Add event listener for role toggle using the global handler
+      document.getElementById('role-toggle-container').addEventListener('click', handleRoleToggle);
       
       // Add event listener for Twitter verification button
       const verifyTwitterBtn = document.getElementById('verify-twitter-btn');
@@ -679,17 +670,8 @@
       // Add event listener for back button to always go to homepage
       document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
-      // Add event listener for role toggle
-      document.getElementById('role-toggle-container').addEventListener('click', function() {
-        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
-        if (currentRole === UserRole.PUBLISHER) {
-          localStorage.setItem('selectedRole', UserRole.KOL);
-          renderSampleTasksPage();
-        } else {
-          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
-          renderPublisherPage();
-        }
-      });
+      // Add event listener for role toggle using the global handler
+      document.getElementById('role-toggle-container').addEventListener('click', handleRoleToggle);
       
       // Add event listener for task submission button
       document.getElementById('publish-task-btn').addEventListener('click', function(event) {
@@ -735,15 +717,26 @@
           
           console.log('Task published successfully, navigating to home page in 1 second');
           
-          // Redirect to homepage with a slight delay to ensure notification is shown
+          // Use the global navigation function with a slight delay to ensure notification is shown
           setTimeout(function() {
-            window.location.hash = '#/home';
+            // Use the global navigateTo function for consistent navigation
+            navigateTo('#/home');
             
             // Double-check navigation after a short delay
             setTimeout(function() {
               if (window.location.hash !== '#/home') {
                 console.log('Navigation failed, forcing navigation to home page');
+                // Try direct hash change as a fallback
                 window.location.hash = '#/home';
+                
+                // If still not navigating, try a page reload as a last resort
+                setTimeout(function() {
+                  if (window.location.hash !== '#/home') {
+                    console.log('Navigation still failed, forcing page reload');
+                    window.location.href = window.location.origin + '/#/home';
+                    window.location.reload();
+                  }
+                }, 500);
               }
             }, 500);
           }, 1000);
@@ -1051,23 +1044,33 @@
       // Add event listener for back button to always go to homepage
       document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
-      // Add event listener for role toggle
-      document.getElementById('role-toggle-container').addEventListener('click', function() {
-        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
-        if (currentRole === UserRole.KOL) {
-          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
-          renderPublisherPage();
-        } else {
-          localStorage.setItem('selectedRole', UserRole.KOL);
-          renderSampleTasksPage();
-        }
-      });
+      // Add event listener for role toggle using the global handler
+      document.getElementById('role-toggle-container').addEventListener('click', handleRoleToggle);
     }
 
+    // Global variable to track navigation timeouts
+    window.navigationTimeout = null;
+    
     // Global function for consistent navigation
     function navigateTo(hash) {
       console.log(`Navigating to ${hash}`);
+      
+      // Clear any existing navigation timeouts
+      if (window.navigationTimeout) {
+        clearTimeout(window.navigationTimeout);
+      }
+      
+      // Set the hash to navigate
       window.location.hash = hash;
+      
+      // Set a fallback timeout to force navigation if hash change doesn't trigger
+      window.navigationTimeout = setTimeout(function() {
+        if (window.location.hash !== hash) {
+          console.log('Navigation timeout triggered, forcing reload');
+          window.location.reload();
+        }
+      }, 2000);
+      
       return false; // Prevent default behavior
     }
     
@@ -1078,6 +1081,45 @@
       }
       console.log('Logo clicked, navigating to home page');
       return navigateTo('#/home');
+    }
+    
+    // Global function for handling role toggle consistently across all pages
+    function handleRoleToggle(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      
+      console.log('Role toggle clicked, updating role and navigating');
+      
+      try {
+        const currentRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+        console.log('Current role:', currentRole);
+        
+        // Always toggle the role regardless of current page
+        if (currentRole === UserRole.KOL) {
+          localStorage.setItem('selectedRole', UserRole.PUBLISHER);
+          console.log('Role changed to PUBLISHER, navigating to publisher page');
+          window.location.hash = '#/publisher';
+        } else {
+          localStorage.setItem('selectedRole', UserRole.KOL);
+          console.log('Role changed to KOL, navigating to sample tasks page');
+          window.location.hash = '#/sample-tasks';
+        }
+        
+        // Add a fallback navigation mechanism
+        setTimeout(function() {
+          const expectedHash = currentRole === UserRole.KOL ? '#/publisher' : '#/sample-tasks';
+          if (window.location.hash !== expectedHash) {
+            console.log('Navigation failed, forcing navigation');
+            window.location.hash = expectedHash;
+          }
+        }, 500);
+      } catch (error) {
+        console.error('Error handling role toggle:', error);
+        showNotification('切换角色时出错，请重试', 'error');
+      }
+      
+      return false;
     }
     
     // Initialize the app
@@ -1097,12 +1139,22 @@
         renderLandingPage();
       }
 
-      // Handle hash changes
+      // Handle hash changes with enhanced error handling and logging
       window.addEventListener('hashchange', function() {
         const hashPath = window.location.hash.split('?')[0]; // Get the path part without query params
         console.log('Hash changed to:', hashPath);
         
         try {
+          // Clear any existing navigation timeouts
+          if (window.navigationTimeout) {
+            clearTimeout(window.navigationTimeout);
+            window.navigationTimeout = null;
+          }
+          
+          // Track navigation start time for performance monitoring
+          const navigationStartTime = new Date().getTime();
+          console.log(`Starting navigation to ${hashPath} at ${navigationStartTime}`);
+          
           if (hashPath === '#/sample-tasks') {
             renderSampleTasksPage();
           } else if (hashPath === '#/publisher') {
@@ -1114,8 +1166,13 @@
           } else {
             renderLandingPage();
           }
+          
+          // Log navigation completion time
+          const navigationEndTime = new Date().getTime();
+          console.log(`Completed navigation to ${hashPath} in ${navigationEndTime - navigationStartTime}ms`);
         } catch (error) {
           console.error('Error rendering page:', error);
+          showNotification('页面加载出错，请重试', 'error');
           // Fallback to landing page if rendering fails
           renderLandingPage();
         }
