@@ -317,9 +317,7 @@
       `;
 
       // Add event listener for back button to always go to homepage
-      document.getElementById('back-to-home').addEventListener('click', function() {
-        window.location.hash = '#/home';
-      });
+      document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
       // Add event listener for role toggle
       document.getElementById('role-toggle-container').addEventListener('click', function() {
@@ -679,9 +677,7 @@
       `;
 
       // Add event listener for back button to always go to homepage
-      document.getElementById('back-to-home').addEventListener('click', function() {
-        window.location.hash = '#/home';
-      });
+      document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
       // Add event listener for role toggle
       document.getElementById('role-toggle-container').addEventListener('click', function() {
@@ -696,45 +692,65 @@
       });
       
       // Add event listener for task submission button
-      document.getElementById('publish-task-btn').addEventListener('click', function() {
-        // Collect form data
-        const taskTitle = document.querySelector('input[placeholder="例如：新产品宣发活动"]').value;
-        const taskDescription = document.querySelector('textarea[placeholder="详细描述您的营销需求..."]').value;
-        const contentRequirements = document.querySelector('textarea[placeholder="对内容的具体要求，如字数、格式等..."]').value;
-        const platform = document.querySelector('select').value;
-        const platformRequirements = document.querySelector('input[placeholder="例如：账户粉丝数要求、内容方向等"]').value;
-        const commission = document.querySelector('input[placeholder="例如：400"]').value;
-        const wordCount = document.querySelector('input[placeholder="例如：200"]').value;
-        const paymentInfo = document.querySelector('input[placeholder="BSC钱包地址"]').value;
+      document.getElementById('publish-task-btn').addEventListener('click', function(event) {
+        // Prevent default behavior
+        event.preventDefault();
         
-        // Validate form data
-        if (!taskTitle || !taskDescription || !contentRequirements || !platform || !platformRequirements || !commission) {
-          showNotification('请填写所有必填字段', 'error');
-          return;
+        try {
+          // Collect form data
+          const taskTitle = document.querySelector('input[placeholder="例如：新产品宣发活动"]').value;
+          const taskDescription = document.querySelector('textarea[placeholder="详细描述您的营销需求..."]').value;
+          const contentRequirements = document.querySelector('textarea[placeholder="对内容的具体要求，如字数、格式等..."]').value;
+          const platform = document.querySelector('select').value;
+          const platformRequirements = document.querySelector('input[placeholder="例如：账户粉丝数要求、内容方向等"]').value;
+          const commission = document.querySelector('input[placeholder="例如：400"]').value;
+          const wordCount = document.querySelector('input[placeholder="例如：200"]').value;
+          const paymentInfo = document.querySelector('input[placeholder="BSC钱包地址"]').value;
+          
+          // Validate form data
+          if (!taskTitle || !taskDescription || !contentRequirements || !platform || !platformRequirements || !commission) {
+            showNotification('请填写所有必填字段', 'error');
+            return;
+          }
+          
+          // Create task object
+          const newTask = {
+            title: taskTitle,
+            description: taskDescription,
+            requirements: contentRequirements,
+            platform: platform,
+            platform_requirements: platformRequirements,
+            commission: parseInt(commission),
+            word_count: parseInt(wordCount) || 0,
+            payment_info: paymentInfo,
+            status: 'open',
+            created_at: new Date().toISOString()
+          };
+          
+          // Store the new task in localStorage
+          localStorage.setItem('newlyCreatedTask', JSON.stringify(newTask));
+          
+          // Show success notification
+          showNotification('任务发布成功！', 'success');
+          
+          console.log('Task published successfully, navigating to home page in 1 second');
+          
+          // Redirect to homepage with a slight delay to ensure notification is shown
+          setTimeout(function() {
+            window.location.hash = '#/home';
+            
+            // Double-check navigation after a short delay
+            setTimeout(function() {
+              if (window.location.hash !== '#/home') {
+                console.log('Navigation failed, forcing navigation to home page');
+                window.location.hash = '#/home';
+              }
+            }, 500);
+          }, 1000);
+        } catch (error) {
+          console.error('Error publishing task:', error);
+          showNotification('发布任务时出错，请重试', 'error');
         }
-        
-        // Create task object
-        const newTask = {
-          title: taskTitle,
-          description: taskDescription,
-          requirements: contentRequirements,
-          platform: platform,
-          platform_requirements: platformRequirements,
-          commission: parseInt(commission),
-          word_count: parseInt(wordCount) || 0,
-          payment_info: paymentInfo,
-          status: 'open',
-          created_at: new Date().toISOString()
-        };
-        
-        // Store the new task in localStorage
-        localStorage.setItem('newlyCreatedTask', JSON.stringify(newTask));
-        
-        // Show success notification
-        showNotification('任务发布成功！', 'success');
-        
-        // Redirect to homepage
-        window.location.hash = '#/home';
       });
     }
 
@@ -1033,9 +1049,7 @@
       `;
 
       // Add event listener for back button to always go to homepage
-      document.getElementById('back-to-home').addEventListener('click', function() {
-        window.location.hash = '#/home';
-      });
+      document.getElementById('back-to-home').addEventListener('click', handleLogoClick);
       
       // Add event listener for role toggle
       document.getElementById('role-toggle-container').addEventListener('click', function() {
@@ -1050,6 +1064,22 @@
       });
     }
 
+    // Global function for consistent navigation
+    function navigateTo(hash) {
+      console.log(`Navigating to ${hash}`);
+      window.location.hash = hash;
+      return false; // Prevent default behavior
+    }
+    
+    // Global function to handle logo navigation
+    function handleLogoClick(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      console.log('Logo clicked, navigating to home page');
+      return navigateTo('#/home');
+    }
+    
     // Initialize the app
     window.onload = function() {
       // Check if we have a hash route
@@ -1070,16 +1100,23 @@
       // Handle hash changes
       window.addEventListener('hashchange', function() {
         const hashPath = window.location.hash.split('?')[0]; // Get the path part without query params
+        console.log('Hash changed to:', hashPath);
         
-        if (hashPath === '#/sample-tasks') {
-          renderSampleTasksPage();
-        } else if (hashPath === '#/publisher') {
-          renderPublisherPage();
-        } else if (hashPath === '#/kol-profile') {
-          renderSampleTasksPage(); // KOL profile is part of the sample tasks page
-        } else if (hashPath === '#/home') {
-          renderHomePage(); // New home page
-        } else {
+        try {
+          if (hashPath === '#/sample-tasks') {
+            renderSampleTasksPage();
+          } else if (hashPath === '#/publisher') {
+            renderPublisherPage();
+          } else if (hashPath === '#/kol-profile') {
+            renderSampleTasksPage(); // KOL profile is part of the sample tasks page
+          } else if (hashPath === '#/home') {
+            renderHomePage(); // New home page
+          } else {
+            renderLandingPage();
+          }
+        } catch (error) {
+          console.error('Error rendering page:', error);
+          // Fallback to landing page if rendering fails
           renderLandingPage();
         }
       });
