@@ -370,56 +370,114 @@
       if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', async function() {
           try {
-            // Get form data
-            const platformSelect = document.querySelector('select[class*="border-gray-300"]:first-of-type');
-            const platformLinkInput = document.querySelector('input[placeholder*="平台账号链接"]');
-            const followerCountInput = document.querySelector('input[placeholder*="例如：5000"]');
-            const contentFocusSelect = document.querySelector('select[class*="border-gray-300"]:nth-of-type(2)');
-            const priceInput = document.querySelector('input[placeholder*="例如：400"]');
-            const walletInput = document.querySelector('input[placeholder*="BSC钱包地址"]');
+            // Get form data with more robust selectors
+            let platformSelect = document.querySelector('select[class*="border-gray-300"]');
+            let platformLinkInput = document.querySelector('input[placeholder*="平台账号链接"], input[placeholder*="https://twitter.com"]');
+            let followerCountInput = document.querySelector('input[placeholder*="例如：5000"], input[placeholder*="5000"]');
+            let contentFocusSelect = document.querySelector('select[class*="border-gray-300"]:nth-of-type(2)');
+            let priceInput = document.querySelector('input[placeholder*="例如：400"], input[placeholder*="400"]');
+            let walletInput = document.querySelector('input[placeholder*="BSC钱包地址"], input[placeholder*="BSC"]');
             
-            if (!platformSelect || !platformLinkInput || !followerCountInput || 
-                !contentFocusSelect || !priceInput || !walletInput) {
-              throw new Error('无法获取表单数据');
+            // Debug form element detection
+            console.log('Form elements found:', {
+              platformSelect: !!platformSelect,
+              platformLinkInput: !!platformLinkInput,
+              followerCountInput: !!followerCountInput,
+              contentFocusSelect: !!contentFocusSelect,
+              priceInput: !!priceInput,
+              walletInput: !!walletInput
+            });
+            
+            // Fallback selectors if the specific ones fail
+            if (!platformSelect) {
+              platformSelect = document.querySelectorAll('select')[0];
+            }
+            if (!contentFocusSelect) {
+              contentFocusSelect = document.querySelectorAll('select')[1];
+            }
+            if (!platformLinkInput) {
+              platformLinkInput = document.querySelector('input[type="text"]:nth-of-type(1)');
+            }
+            if (!followerCountInput) {
+              followerCountInput = document.querySelector('input[type="number"]:nth-of-type(1), input[type="text"]:nth-of-type(2)');
+            }
+            if (!priceInput) {
+              priceInput = document.querySelector('input[type="number"]:nth-of-type(2), input[type="text"]:nth-of-type(3)');
+            }
+            if (!walletInput) {
+              walletInput = document.querySelector('input[type="text"]:nth-of-type(4), input[type="text"]:last-of-type');
             }
             
+            // Final check with more detailed error
+            if (!platformSelect || !platformLinkInput || !followerCountInput || 
+                !contentFocusSelect || !priceInput || !walletInput) {
+              const missingFields = [];
+              if (!platformSelect) missingFields.push('平台选择');
+              if (!platformLinkInput) missingFields.push('平台账号链接');
+              if (!followerCountInput) missingFields.push('粉丝数');
+              if (!contentFocusSelect) missingFields.push('内容方向');
+              if (!priceInput) missingFields.push('单条报价');
+              if (!walletInput) missingFields.push('钱包地址');
+              
+              throw new Error(`无法获取表单数据: ${missingFields.join(', ')}`);
+            }
+            
+            // Create profile data object with safe value extraction
             const profileData = {
-              platform: platformSelect.value,
-              platform_link: platformLinkInput.value,
+              platform: platformSelect.value || 'Twitter',
+              platform_link: platformLinkInput.value || '',
               followers_count: parseInt(followerCountInput.value) || 0,
-              content_focus: contentFocusSelect.value,
+              content_focus: contentFocusSelect.value || 'Meme',
               price_per_post: parseInt(priceInput.value) || 0,
-              wallet_address: walletInput.value
+              wallet_address: walletInput.value || ''
             };
             
+            console.log('Saving profile data:', profileData);
+            
             try {
-              // Save profile data using API with improved fallback
+              // Always save to localStorage first as a backup
+              localStorage.setItem('kol_profile', JSON.stringify(profileData));
+              
+              // Then try API if available
               if (window.api && typeof window.api.saveKolProfile === 'function') {
                 await window.api.saveKolProfile(profileData);
-                // Show success notification
-                window.twitterAuth.showNotification('个人资料保存成功！', 'success');
-                
-                // Redirect to home page
-                setTimeout(() => {
-                  window.location.hash = '#/home';
-                }, 1000); // Delay to show notification
-              } else {
-                // Direct fallback to localStorage if API not available
-                localStorage.setItem('kol_profile', JSON.stringify(profileData));
-                window.twitterAuth.showNotification('个人资料保存成功！', 'success');
-                
-                // Redirect to home page
-                setTimeout(() => {
-                  window.location.hash = '#/home';
-                }, 1000); // Delay to show notification
               }
+              
+              // Show success notification
+              if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
+                window.twitterAuth.showNotification('个人资料保存成功！', 'success');
+              } else {
+                showNotification('个人资料保存成功！', 'success');
+              }
+              
+              // Redirect to home page
+              setTimeout(() => {
+                window.location.hash = '#/home';
+              }, 1000); // Delay to show notification
             } catch (error) {
               console.error('保存个人资料时出错:', error);
-              window.twitterAuth.showNotification('保存个人资料失败，请重试。', 'error');
+              
+              // Show error notification
+              if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
+                window.twitterAuth.showNotification('保存到API失败，但已保存到本地存储。', 'info');
+              } else {
+                showNotification('保存到API失败，但已保存到本地存储。', 'info');
+              }
+              
+              // Still redirect since we saved to localStorage
+              setTimeout(() => {
+                window.location.hash = '#/home';
+              }, 1500);
             }
           } catch (error) {
             console.error('保存个人资料失败:', error);
-            window.twitterAuth.showNotification('保存个人资料失败，请重试。', 'error');
+            
+            // Show detailed error notification
+            if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
+              window.twitterAuth.showNotification(`保存个人资料失败: ${error.message}`, 'error');
+            } else {
+              showNotification(`保存个人资料失败: ${error.message}`, 'error');
+            }
           }
         });
       }
