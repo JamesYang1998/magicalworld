@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACF Spark Admin Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-md">
+        <div class="text-center">
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">ACF Spark Admin</h2>
+            <p class="mt-2 text-sm text-gray-600">Sign in to access the admin dashboard</p>
+        </div>
+        <form class="mt-8 space-y-6" id="login-form">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Username">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Password">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Sign in
+                </button>
+            </div>
+            
+            <div id="error-message" class="text-red-500 text-center hidden"></div>
+        </form>
+        
+        <div class="text-center mt-4">
+            <a href="index.html" class="text-sm text-blue-600 hover:text-blue-800">Return to Home</a>
+        </div>
+    </div>
+    
+    <script src="js/admin-api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if already logged in
+            if (localStorage.getItem('admin_token')) {
+                window.location.href = 'admin.html';
+            }
+            
+            const loginForm = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+            
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                try {
+                    // Try to use the API for login
+                    if (window.adminApi && typeof window.adminApi.login === 'function') {
+                        await window.adminApi.login(username, password);
+                        localStorage.setItem('admin_username', username);
+                        window.location.href = 'admin.html';
+                    } else {
+                        // Fallback to mock authentication
+                        if (username === 'admin' && password === 'ACF_Spark_Admin_2025') {
+                            localStorage.setItem('admin_token', 'mock_admin_token_' + Date.now());
+                            localStorage.setItem('admin_username', username);
+                            window.location.href = 'admin.html';
+                        } else {
+                            throw new Error('Invalid credentials');
+                        }
+                    }
+                } catch (error) {
+                    // Show error message
+                    errorMessage.textContent = 'Invalid username or password';
+                    errorMessage.classList.remove('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACF Spark API Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-blue-600">ACF Spark API</h1>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="index.html" class="px-3 py-2 rounded-md text-sm font-medium text-blue-600 hover:text-blue-800">Home</a>
+                    <a href="admin-login.html" class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Admin Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h2 class="text-2xl font-bold text-gray-900">API Documentation</h2>
+        
+        <div class="mt-6 bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Base URL</h3>
+                <div class="bg-gray-100 p-4 rounded">
+                    <code class="text-sm">https://kol-backend-uemmyzlr.fly.dev</code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <a href="#authentication" class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Authentication</a>
+                    <a href="#users" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Users</a>
+                    <a href="#kol-profiles" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">KOL Profiles</a>
+                    <a href="#tasks" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Tasks</a>
+                    <a href="#submissions" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Submissions</a>
+                    <a href="#twitter" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Twitter</a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Authentication Section -->
+        <div id="authentication" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Authentication</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Login</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Get an access token by providing username and password.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /auth/token</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body (form-data):</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+username: string
+password: string</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "access_token": "string",
+  "token_type": "bearer"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Register</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Register a new user.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /auth/register</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "username": "string",
+  "email": "string",
+  "password": "string",
+  "role": "kol" | "publisher"
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "username": "string",
+  "email": "string",
+  "role": "kol" | "publisher",
+  "created_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users Section -->
+        <div id="users" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Users</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Get Current User</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Get the current authenticated user's information.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">GET /users/me</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "username": "string",
+  "email": "string",
+  "role": "kol" | "publisher" | "admin",
+  "created_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KOL Profiles Section -->
+        <div id="kol-profiles" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">KOL Profiles</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Get Current KOL Profile</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Get the current authenticated user's KOL profile.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">GET /kol-profiles/me</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "user_id": 1,
+  "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+  "platform_link": "string",
+  "followers_count": 5000,
+  "focus_area": "Meme" | "Investment" | "Education" | "Other",
+  "price_per_post": 400,
+  "wallet_address": "string",
+  "twitter_verified": true,
+  "created_at": "2025-03-14T10:00:00",
+  "updated_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Create/Update KOL Profile</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Create or update the current user's KOL profile.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /kol-profiles</p>
+                        <p class="text-sm font-medium text-gray-700">PUT /kol-profiles/me</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+  "platform_link": "string",
+  "followers_count": 5000,
+  "focus_area": "Meme" | "Investment" | "Education" | "Other",
+  "price_per_post": 400,
+  "wallet_address": "string"
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "user_id": 1,
+  "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+  "platform_link": "string",
+  "followers_count": 5000,
+  "focus_area": "Meme" | "Investment" | "Education" | "Other",
+  "price_per_post": 400,
+  "wallet_address": "string",
+  "twitter_verified": false,
+  "created_at": "2025-03-14T10:00:00",
+  "updated_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tasks Section -->
+        <div id="tasks" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Tasks</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Get All Tasks</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Get all available tasks.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">GET /tasks</p>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+[
+  {
+    "id": 1,
+    "title": "string",
+    "description": "string",
+    "requirements": "string",
+    "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+    "platform_requirements": "string",
+    "commission": 400,
+    "word_count": 280,
+    "status": "open" | "in_progress" | "completed",
+    "created_at": "2025-03-14T10:00:00",
+    "updated_at": "2025-03-14T10:00:00"
+  }
+]</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Create Task</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Create a new task (publisher only).</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /tasks</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "title": "string",
+  "description": "string",
+  "requirements": "string",
+  "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+  "platform_requirements": "string",
+  "commission": 400,
+  "word_count": 280
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "title": "string",
+  "description": "string",
+  "requirements": "string",
+  "platform": "Twitter" | "Instagram" | "YouTube" | "TikTok",
+  "platform_requirements": "string",
+  "commission": 400,
+  "word_count": 280,
+  "status": "open",
+  "created_at": "2025-03-14T10:00:00",
+  "updated_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Submissions Section -->
+        <div id="submissions" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Submissions</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Create Submission</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Submit a completed task (KOL only).</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /submissions</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "task_id": 1,
+  "content_link": "string",
+  "comments": "string"
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "id": 1,
+  "task_id": 1,
+  "kol_id": 1,
+  "content_link": "string",
+  "comments": "string",
+  "status": "pending",
+  "created_at": "2025-03-14T10:00:00",
+  "updated_at": "2025-03-14T10:00:00"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Twitter Section -->
+        <div id="twitter" class="mt-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Twitter</h3>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Authorize Twitter</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Initiate Twitter OAuth flow.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">GET /twitter/authorize</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <p class="text-sm text-gray-500">Redirects to Twitter authorization page.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Verify Twitter Link</h4>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Verify that Twitter account matches platform link.</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4">
+                        <p class="text-sm font-medium text-gray-700">POST /twitter/verify-link</p>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Headers:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+Authorization: Bearer {access_token}</pre>
+                    </div>
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Request Body:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "platform_link": "string"
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Response:</h5>
+                        <pre class="bg-gray-100 p-4 rounded text-sm">
+{
+  "verified": true
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="bg-white mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">© 2025 ACF Spark. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
