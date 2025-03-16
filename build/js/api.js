@@ -200,7 +200,7 @@ async function verifyTwitter() {
       throw new Error('Not authenticated');
     }
     
-    // Redirect to Twitter authorization endpoint
+    // Redirect to Twitter authorization page
     window.location.href = `${API_BASE_URL}/twitter/authorize`;
     return true;
   } catch (error) {
@@ -309,6 +309,34 @@ function getProfileFromLocalStorage() {
   return profileData ? JSON.parse(profileData) : null;
 }
 
+// Twitter analysis API functions
+async function getTwitterAnalysis(profileId) {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/kol-profiles/${profileId}/twitter-analysis`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get Twitter analysis');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting Twitter analysis:', error);
+    return null;
+  }
+}
+
+
 // Export API functions
 window.api = {
   login,
@@ -321,5 +349,6 @@ window.api = {
   verifyTwitterLink,
   createSubmission,
   getSampleTasks,
-  getProfileFromLocalStorage
+  getProfileFromLocalStorage,
+  getTwitterAnalysis
 };

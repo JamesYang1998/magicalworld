@@ -58,48 +58,21 @@
   </div>
 
   <script>
+    // Check for code and state parameters from Twitter OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    
+    if (code && state) {
+      // Redirect to backend callback endpoint
+      const API_BASE_URL = 'https://kol-backend-uemmyzlr.fly.dev';
+      window.location.href = `${API_BASE_URL}/twitter/callback?code=${code}&state=${state}`;
+    }
+    
     document.getElementById('authorize-btn').addEventListener('click', function() {
-      // Simulate authorization process
-      setTimeout(function() {
-        // Store mock data in localStorage
-        const mockTwitterData = {
-          username: 'kol_user123',
-          followers_count: 5280,
-          verified: true,
-          profile_image: 'https://pbs.twimg.com/profile_images/default_profile.png',
-          tweets: [
-            {
-              id: '1234567890',
-              text: '很高兴加入ACF Spark平台，期待与各品牌合作！ #KOL #DigitalMarketing',
-              created_at: '2025-03-10T12:30:00Z',
-              likes: 42,
-              retweets: 12
-            },
-            {
-              id: '1234567891',
-              text: '刚刚完成了一个加密货币项目的推广，效果非常好！ #Crypto #Marketing',
-              created_at: '2025-03-05T09:15:00Z',
-              likes: 38,
-              retweets: 8
-            },
-            {
-              id: '1234567892',
-              text: '分享一些社交媒体营销的小技巧，希望对大家有帮助！ #SocialMedia #Tips',
-              created_at: '2025-02-28T15:45:00Z',
-              likes: 56,
-              retweets: 23
-            }
-          ]
-        };
-        
-        localStorage.setItem('twitter_auth_data', JSON.stringify(mockTwitterData));
-        
-        // Redirect directly to the sample tasks page with the success parameter
-        window.location.href = 'index.html#/sample-tasks';
-        
-        // Set a flag in localStorage to indicate successful Twitter auth
-        localStorage.setItem('twitter_auth_success', 'true');
-      }, 1500); // Simulate network delay
+      // Redirect to Twitter authorization endpoint
+      const API_BASE_URL = 'https://kol-backend-uemmyzlr.fly.dev';
+      window.location.href = `${API_BASE_URL}/twitter/authorize`;
       
       // Show loading state
       this.innerHTML = '<span class="animate-pulse">授权中...</span>';
