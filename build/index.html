@@ -9,6 +9,7 @@
   <title>ACF Spark</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="css/custom.css?v=2" rel="stylesheet">
+  <link href="css/task-card.css?v=1" rel="stylesheet">
   <style>
     .line-clamp-2 {
       display: -webkit-box;
@@ -1060,8 +1061,8 @@
                 </div>
                 ` : `
                 <!-- Sonic Twitter Campaign -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                  <div class="p-6">
+                <div class="bg-white shadow rounded-lg overflow-hidden task-card">
+                  <div class="p-6 task-card-content">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Sonic Twitter Campaign</h2>
                       <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter</span>
@@ -1095,7 +1096,7 @@
                         推文需包含Sonic游戏的新特性介绍，如新角色、新关卡和多人游戏模式。需要使用官方提供的游戏截图，并附上游戏下载链接。推文语调应轻松活泼，与Sonic品牌形象一致。
                       </p>
                     </div>
-                    <div class="mt-6 pt-4 flex justify-center" style="position: relative; bottom: 0; left: 0; right: 0;">
+                    <div class="task-card-button-container">
                       <button class="btn-standard ${isTaskApplied(-1) ? 'verified' : ''}" data-task-id="-1">
                         ${isTaskApplied(-1) ? '已申请' : '申请任务'}
                       </button>
@@ -1112,8 +1113,8 @@
                 `}
                 
                 <!-- Crypto Exchange Campaign -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                  <div class="p-6">
+                <div class="bg-white shadow rounded-lg overflow-hidden task-card">
+                  <div class="p-6 task-card-content">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Binance Trading Competition</h2>
                       <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">全平台</span>
@@ -1147,7 +1148,7 @@
                         内容需详细介绍交易大赛的规则、奖励机制和参与方式。强调Binance平台的安全性和流动性优势。需要引导用户注册Binance账户并参与活动。可以分享个人使用Binance的经验和心得。
                       </p>
                     </div>
-                    <div class="mt-6 pt-4 flex justify-center" style="position: relative; bottom: 0; left: 0; right: 0;">
+                    <div class="task-card-button-container">
                       <button class="btn-standard ${isTaskApplied(-2) ? 'verified' : ''}" data-task-id="-2">
                         ${isTaskApplied(-2) ? '已申请' : '申请任务'}
                       </button>
@@ -1163,8 +1164,8 @@
                 </div>
                 
                 <!-- NFT Project -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                  <div class="p-6">
+                <div class="bg-white shadow rounded-lg overflow-hidden task-card">
+                  <div class="p-6 task-card-content">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Azuki NFT Collection</h2>
                       <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter/Instagram</span>
@@ -1198,7 +1199,7 @@
                         内容需展示Azuki NFT的艺术价值和社区文化，分享官方提供的NFT预览图，并介绍铸造日期、价格和获取方式。可以分享对NFT市场的见解和Azuki项目的未来发展前景。
                       </p>
                     </div>
-                    <div class="mt-6 pt-4 flex justify-center" style="position: relative; bottom: 0; left: 0; right: 0;">
+                    <div class="task-card-button-container">
                       <button class="btn-standard ${isTaskApplied(-3) ? 'verified' : ''}" data-task-id="-3">
                         ${isTaskApplied(-3) ? '已申请' : '申请任务'}
                       </button>
@@ -1214,8 +1215,8 @@
                 </div>
                 
                 <!-- DeFi Project -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                  <div class="p-6">
+                <div class="bg-white shadow rounded-lg overflow-hidden task-card">
+                  <div class="p-6 task-card-content">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Aave V3 功能介绍</h2>
                       <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">YouTube</span>
@@ -1249,7 +1250,7 @@
                         视频需详细演示Aave V3的新功能，如跨链借贷、隔离模式和高效模式等。需要进行实际操作演示，并解释各功能的优势和适用场景。内容应既适合DeFi新手理解，又能为资深用户提供有价值的信息。
                       </p>
                     </div>
-                    <div class="mt-6 pt-4 flex justify-center" style="position: relative; bottom: 0; left: 0; right: 0;">
+                    <div class="task-card-button-container">
                       <button class="btn-standard ${isTaskApplied(-4) ? 'verified' : ''}" data-task-id="-4">
                         ${isTaskApplied(-4) ? '已申请' : '申请任务'}
                       </button>
