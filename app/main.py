@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
 from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
@@ -10,7 +16,6 @@ from app.routers.submissions import router as submissions_router
 from app.routers.twitter import router as twitter_router
 from app.routers.admin import router as admin_router
 from app.tasks.twitter_analysis import celery_app
-import os
 
 # Create FastAPI app
 app = FastAPI(title="ACF Spark API", description="Backend API for ACF Spark KOL Platform")

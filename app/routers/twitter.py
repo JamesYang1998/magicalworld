@@ -25,11 +25,18 @@ async def authorize_twitter(
             detail="KOL profile not found",
         )
     
-    # Generate authorization URL
-    auth_url = initiate_twitter_oauth(current_user.id)
-    
-    # Redirect to Twitter authorization page
-    return RedirectResponse(url=auth_url)
+    try:
+        # Generate authorization URL
+        auth_url = initiate_twitter_oauth(current_user.id)
+        
+        # Redirect to Twitter authorization page
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        print(f"Twitter OAuth error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to initiate Twitter OAuth: {str(e)}",
+        )
 
 @router.get("/mock-auth", response_class=HTMLResponse)
 async def twitter_mock_auth(state: str):

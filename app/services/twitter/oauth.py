@@ -17,7 +17,7 @@ from typing import Dict, Optional, Tuple
 from app.models.kol_profile import KOLProfile
 
 # Twitter API credentials (to be set in environment variables)
-TWITTER_CLIENT_ID = os.getenv("TWITTER_CLIENT_ID", "")
+TWITTER_CLIENT_ID = os.getenv("TWITTER_CLIENT_IDI", os.getenv("TWITTER_CLIENT_ID", ""))
 TWITTER_CLIENT_SECRET = os.getenv("TWITTER_CLIENT_SECRET", "")
 TWITTER_REDIRECT_URI = os.getenv("TWITTER_REDIRECT_URI", "")
 
