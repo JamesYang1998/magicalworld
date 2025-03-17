@@ -741,8 +741,10 @@
           const taskTitle = document.querySelector('input[placeholder="例如：新产品宣发活动"]').value;
           const taskDescription = document.querySelector('textarea[placeholder="详细描述您的营销需求..."]').value;
           const contentRequirements = document.querySelector('textarea[placeholder="对内容的具体要求，如字数、格式等..."]').value;
-          const platform = document.querySelector('select').value;
-          const platformRequirements = document.querySelector('input[placeholder="例如：账户粉丝数要求、内容方向等"]').value;
+          const platformSelect = document.querySelector('select[class*="rounded-md"]:nth-of-type(1)');
+          const platform = platformSelect ? platformSelect.value : '';
+          const followerRequirementsSelect = document.querySelector('select[class*="rounded-md"]:nth-of-type(2)');
+          const platformRequirements = followerRequirementsSelect ? followerRequirementsSelect.value : '';
           const commission = document.querySelector('input[placeholder="例如：400"]').value;
           const wordCount = document.querySelector('input[placeholder="例如：200"]').value;
           const paymentInfo = document.querySelector('input[placeholder="BSC钱包地址"]').value;
