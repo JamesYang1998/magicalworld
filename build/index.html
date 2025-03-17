@@ -825,35 +825,100 @@
       const isApplied = isTaskApplied(taskId);
       
       if (!isApplied) {
-        // Immediately update button state to green with "已申请" text
-        button.textContent = '已申请';
-        button.classList.add('verified');
+        // Apply for the task
+        applyForTask(taskId, button);
+      } else {
+        // Cancel the task application
+        cancelTaskApplication(taskId, button);
+      }
+    }
+    
+    // Function to apply for a task
+    function applyForTask(taskId, button) {
+      // Immediately update button state to green with "已申请" text
+      button.textContent = '已申请';
+      button.classList.add('verified');
+      
+      // Save the task application with empty return link for now
+      saveAppliedTask(taskId, '');
+      
+      // Show success notification
+      showNotification('任务申请成功！', 'success');
+      
+      // Show return link dialog
+      const dialogId = `return-link-dialog-${taskId}`;
+      const dialog = document.getElementById(dialogId);
+      
+      if (dialog) {
+        dialog.style.display = 'block';
         
-        // Save the task application with empty return link for now
-        saveAppliedTask(taskId, '');
-        
-        // Show success notification
-        showNotification('任务申请成功！', 'success');
-        
-        // Show return link dialog
-        const dialogId = `return-link-dialog-${taskId}`;
-        const dialog = document.getElementById(dialogId);
-        
-        if (dialog) {
-          dialog.style.display = 'block';
-          
-          // Focus on the input field
-          const inputField = dialog.querySelector('input');
-          if (inputField) {
-            inputField.focus();
-          }
-        } else {
-          console.error(`Dialog with ID ${dialogId} not found`);
-          showNotification('申请任务失败，请重试', 'error');
+        // Focus on the input field
+        const inputField = dialog.querySelector('input');
+        if (inputField) {
+          inputField.focus();
         }
       } else {
-        showNotification('您已经申请过该任务', 'info');
+        console.error(`Dialog with ID ${dialogId} not found`);
+        showNotification('申请任务失败，请重试', 'error');
       }
+      
+      // Add hover event listeners
+      addButtonHoverEvents(button);
+    }
+    
+    // Function to cancel a task application
+    function cancelTaskApplication(taskId, button) {
+      // Remove the task from applied tasks
+      const appliedTasks = JSON.parse(localStorage.getItem('appliedTasks') || '{}');
+      delete appliedTasks[taskId];
+      localStorage.setItem('appliedTasks', JSON.stringify(appliedTasks));
+      
+      // Update button state back to blue with "申请任务" text
+      button.textContent = '申请任务';
+      button.classList.remove('verified');
+      
+      // Hide return link dialog
+      const dialogId = `return-link-dialog-${taskId}`;
+      const dialog = document.getElementById(dialogId);
+      if (dialog) {
+        dialog.style.display = 'none';
+      }
+      
+      // Show notification
+      showNotification('已取消申请任务', 'info');
+    }
+    
+    // Function to add hover events to buttons
+    function addButtonHoverEvents(button) {
+      if (button.classList.contains('verified')) {
+        // Store original text
+        const originalText = button.textContent;
+        
+        // Add mouseover event
+        button.addEventListener('mouseover', function() {
+          if (this.classList.contains('verified')) {
+            this.textContent = '取消申请';
+          }
+        });
+        
+        // Add mouseout event
+        button.addEventListener('mouseout', function() {
+          if (this.classList.contains('verified')) {
+            this.textContent = originalText;
+          }
+        });
+      }
+    }
+    
+    // Initialize hover events for all verified buttons on page load
+    function initializeButtonHoverEvents() {
+      const taskButtons = document.querySelectorAll('button[data-task-id]');
+      taskButtons.forEach(button => {
+        const taskId = button.getAttribute('data-task-id');
+        if (isTaskApplied(taskId)) {
+          addButtonHoverEvents(button);
+        }
+      });
     }
     
     // Function to submit return link
@@ -1219,13 +1284,35 @@
       // Add event listener for role toggle using the global handler
       document.getElementById('role-toggle-container').addEventListener('click', handleRoleToggle);
       
-      // Add event listeners for task application buttons
+     // Add event listeners for task application buttons
       const taskButtons = document.querySelectorAll('button[data-task-id]');
       taskButtons.forEach(button => {
         const taskId = button.getAttribute('data-task-id');
+        
+        // Add click event listener
         button.addEventListener('click', function() {
           handleTaskApplication(taskId, this);
         });
+        
+        // Add hover event listeners for already applied buttons
+        if (isTaskApplied(taskId)) {
+          // Store original text
+          const originalText = button.textContent;
+          
+          // Add mouseover event
+          button.addEventListener('mouseover', function() {
+            if (this.classList.contains('verified')) {
+              this.textContent = '取消申请';
+            }
+          });
+          
+          // Add mouseout event
+          button.addEventListener('mouseout', function() {
+            if (this.classList.contains('verified')) {
+              this.textContent = originalText;
+            }
+          });
+        }
       });
     }
 
@@ -1305,6 +1392,9 @@
     
     // Initialize the app
     window.onload = function() {
+      // Initialize hover events for all verified buttons
+      initializeButtonHoverEvents();
+      
       // Check if we have a hash route
       const hashPath = window.location.hash.split('?')[0]; // Get the path part without query params
       

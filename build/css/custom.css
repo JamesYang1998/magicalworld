@@ -7,7 +7,19 @@
   background-color: #2563eb !important;
   color: white !important;
   border-radius: 0.375rem !important;
+  transition: all 0.3s ease !important;
 }
 .btn-standard:hover, button.btn-standard:hover, .btn-standard.landing-btn:hover, button.btn-standard.landing-btn:hover {
   background-color: #1d4ed8 !important;
+}
+
+/* Verified button styles */
+.btn-standard.verified {
+  background-color: #10b981 !important; /* Green color */
+  color: white !important;
+}
+
+/* Hover state for verified buttons - shows cancel text */
+.btn-standard.verified:hover {
+  background-color: #ef4444 !important; /* Red color for cancel */
 }
