@@ -69,6 +69,58 @@
       APPROVED: 'approved',
       REJECTED: 'rejected'
     };
+    
+    // Task application data structure functions
+    
+    // Function to get applied tasks from localStorage
+    function getAppliedTasks() {
+      try {
+        const appliedTasks = localStorage.getItem('appliedTasks');
+        return appliedTasks ? JSON.parse(appliedTasks) : {};
+      } catch (error) {
+        console.error('Error getting applied tasks:', error);
+        return {};
+      }
+    }
+    
+    // Function to save applied tasks to localStorage
+    function saveAppliedTask(taskId, returnLink = '') {
+      try {
+        const appliedTasks = getAppliedTasks();
+        appliedTasks[taskId] = {
+          applied: true,
+          returnLink: returnLink,
+          appliedAt: new Date().toISOString()
+        };
+        localStorage.setItem('appliedTasks', JSON.stringify(appliedTasks));
+        return true;
+      } catch (error) {
+        console.error('Error saving applied task:', error);
+        return false;
+      }
+    }
+    
+    // Function to check if a task is applied
+    function isTaskApplied(taskId) {
+      try {
+        const appliedTasks = getAppliedTasks();
+        return appliedTasks[taskId] && appliedTasks[taskId].applied;
+      } catch (error) {
+        console.error('Error checking if task is applied:', error);
+        return false;
+      }
+    }
+    
+    // Function to get return link for a task
+    function getTaskReturnLink(taskId) {
+      try {
+        const appliedTasks = getAppliedTasks();
+        return appliedTasks[taskId] ? appliedTasks[taskId].returnLink : '';
+      } catch (error) {
+        console.error('Error getting task return link:', error);
+        return '';
+      }
+    }
 
     // Sample tasks data
     function getSampleTasks() {
@@ -750,7 +802,7 @@
     // Function to show notification
     function showNotification(message, type = 'info') {
       const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-blue-500'} text-white z-50`;
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white z-50`;
       notification.textContent = message;
       document.body.appendChild(notification);
       
@@ -758,6 +810,91 @@
       setTimeout(() => {
         notification.remove();
       }, 3000);
+    }
+    
+    // Global function to handle task application
+    function handleTaskApplication(taskId, button) {
+      // Check if user is a KOL
+      const userRole = localStorage.getItem('selectedRole') || UserRole.KOL;
+      if (userRole !== UserRole.KOL) {
+        showNotification('只有KOL用户可以申请任务', 'error');
+        return;
+      }
+      
+      // Check if task is already applied
+      const isApplied = isTaskApplied(taskId);
+      
+      if (!isApplied) {
+        // Immediately update button state to green with "已申请" text
+        button.textContent = '已申请';
+        button.classList.add('verified');
+        
+        // Save the task application with empty return link for now
+        saveAppliedTask(taskId, '');
+        
+        // Show success notification
+        showNotification('任务申请成功！', 'success');
+        
+        // Show return link dialog
+        const dialogId = `return-link-dialog-${taskId}`;
+        const dialog = document.getElementById(dialogId);
+        
+        if (dialog) {
+          dialog.style.display = 'block';
+          
+          // Focus on the input field
+          const inputField = dialog.querySelector('input');
+          if (inputField) {
+            inputField.focus();
+          }
+        } else {
+          console.error(`Dialog with ID ${dialogId} not found`);
+          showNotification('申请任务失败，请重试', 'error');
+        }
+      } else {
+        showNotification('您已经申请过该任务', 'info');
+      }
+    }
+    
+    // Function to submit return link
+    function submitReturnLink(taskId, button) {
+      const dialogId = `return-link-dialog-${taskId}`;
+      const dialog = document.getElementById(dialogId);
+      
+      if (dialog) {
+        const inputField = dialog.querySelector('input');
+        const returnLink = inputField ? inputField.value.trim() : '';
+        
+        if (!returnLink) {
+          showNotification('请输入返链', 'error');
+          return;
+        }
+        
+        // Validate URL format
+        if (!returnLink.startsWith('http://') && !returnLink.startsWith('https://')) {
+          showNotification('请输入有效的URL地址', 'error');
+          return;
+        }
+        
+        // Save applied task with return link
+        if (saveAppliedTask(taskId, returnLink)) {
+          // Update button state
+          if (button) {
+            button.textContent = '已申请';
+            button.classList.add('verified');
+          }
+          
+          // Hide dialog
+          dialog.style.display = 'none';
+          
+          showNotification('任务申请成功！', 'success');
+        } else {
+          showNotification('保存申请失败，请重试', 'error');
+        }
+      } else {
+        console.error(`Dialog with ID ${dialogId} not found`);
+        showNotification('提交返链失败，请重试', 'error');
+      }
     }
     
     // Render home page with sample ad campaigns
@@ -842,10 +979,17 @@
                         ${firstTask.requirements}
                       </p>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
-                        申请任务
+                    <div class="mt-4 flex justify-center">
+                      <button class="btn-standard ${isTaskApplied(firstTask.id || -1) ? 'verified' : ''}" data-task-id="${firstTask.id || -1}">
+                        ${isTaskApplied(firstTask.id || -1) ? '已申请' : '申请任务'}
                       </button>
+                    </div>
+                    <div id="return-link-dialog-${firstTask.id || -1}" class="mt-3 bg-gray-100 p-3 rounded-md" style="display: none;">
+                      <div class="text-sm font-medium text-gray-700 mb-2">请输入返链:</div>
+                      <div class="flex">
+                        <input type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/your_post" value="${getTaskReturnLink(firstTask.id || -1)}">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors" onclick="submitReturnLink('${firstTask.id || -1}', document.querySelector('button[data-task-id=\\'${firstTask.id || -1}\\']'))">提交</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -886,10 +1030,17 @@
                         推文需包含Sonic游戏的新特性介绍，如新角色、新关卡和多人游戏模式。需要使用官方提供的游戏截图，并附上游戏下载链接。推文语调应轻松活泼，与Sonic品牌形象一致。
                       </p>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
-                        申请任务
+                    <div class="mt-4 flex justify-center">
+                      <button class="btn-standard ${isTaskApplied(-1) ? 'verified' : ''}" data-task-id="-1">
+                        ${isTaskApplied(-1) ? '已申请' : '申请任务'}
                       </button>
+                    </div>
+                    <div id="return-link-dialog--1" class="mt-3 bg-gray-100 p-3 rounded-md" style="display: none;">
+                      <div class="text-sm font-medium text-gray-700 mb-2">请输入返链:</div>
+                      <div class="flex">
+                        <input type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/your_post" value="${getTaskReturnLink(-1)}">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors" onclick="submitReturnLink('-1', document.querySelector('button[data-task-id=\\'-1\\']'))">提交</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -931,10 +1082,17 @@
                         内容需详细介绍交易大赛的规则、奖励机制和参与方式。强调Binance平台的安全性和流动性优势。需要引导用户注册Binance账户并参与活动。可以分享个人使用Binance的经验和心得。
                       </p>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
-                        申请任务
+                    <div class="mt-4 flex justify-center">
+                      <button class="btn-standard ${isTaskApplied(-2) ? 'verified' : ''}" data-task-id="-2">
+                        ${isTaskApplied(-2) ? '已申请' : '申请任务'}
                       </button>
+                    </div>
+                    <div id="return-link-dialog--2" class="mt-3 bg-gray-100 p-3 rounded-md" style="display: none;">
+                      <div class="text-sm font-medium text-gray-700 mb-2">请输入返链:</div>
+                      <div class="flex">
+                        <input type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/your_post" value="${getTaskReturnLink(-2)}">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors" onclick="submitReturnLink('-2', document.querySelector('button[data-task-id=\\'-2\\']'))">提交</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -975,10 +1133,17 @@
                         内容需展示Azuki NFT的艺术价值和社区文化，分享官方提供的NFT预览图，并介绍铸造日期、价格和获取方式。可以分享对NFT市场的见解和Azuki项目的未来发展前景。
                       </p>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
-                        申请任务
+                    <div class="mt-4 flex justify-center">
+                      <button class="btn-standard ${isTaskApplied(-3) ? 'verified' : ''}" data-task-id="-3">
+                        ${isTaskApplied(-3) ? '已申请' : '申请任务'}
                       </button>
+                    </div>
+                    <div id="return-link-dialog--3" class="mt-3 bg-gray-100 p-3 rounded-md" style="display: none;">
+                      <div class="text-sm font-medium text-gray-700 mb-2">请输入返链:</div>
+                      <div class="flex">
+                        <input type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/your_post" value="${getTaskReturnLink(-3)}">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors" onclick="submitReturnLink('-3', document.querySelector('button[data-task-id=\\'-3\\']'))">提交</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1019,10 +1184,17 @@
                         视频需详细演示Aave V3的新功能，如跨链借贷、隔离模式和高效模式等。需要进行实际操作演示，并解释各功能的优势和适用场景。内容应既适合DeFi新手理解，又能为资深用户提供有价值的信息。
                       </p>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
-                        申请任务
+                    <div class="mt-4 flex justify-center">
+                      <button class="btn-standard ${isTaskApplied(-4) ? 'verified' : ''}" data-task-id="-4">
+                        ${isTaskApplied(-4) ? '已申请' : '申请任务'}
                       </button>
+                    </div>
+                    <div id="return-link-dialog--4" class="mt-3 bg-gray-100 p-3 rounded-md" style="display: none;">
+                      <div class="text-sm font-medium text-gray-700 mb-2">请输入返链:</div>
+                      <div class="flex">
+                        <input type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/your_post" value="${getTaskReturnLink(-4)}">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors" onclick="submitReturnLink('-4', document.querySelector('button[data-task-id=\\'-4\\']'))">提交</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1046,6 +1218,15 @@
       
       // Add event listener for role toggle using the global handler
       document.getElementById('role-toggle-container').addEventListener('click', handleRoleToggle);
+      
+      // Add event listeners for task application buttons
+      const taskButtons = document.querySelectorAll('button[data-task-id]');
+      taskButtons.forEach(button => {
+        const taskId = button.getAttribute('data-task-id');
+        button.addEventListener('click', function() {
+          handleTaskApplication(taskId, this);
+        });
+      });
     }
 
     // Global variable to track navigation timeouts
