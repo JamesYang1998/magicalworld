@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "kol-backend"
 version = "0.1.0"
-description = "Backend for ACF Spark KOL Platform"
+description = "Backend for ACF Engine KOL Platform"
 authors = ["Devin AI"]
 readme = "README.md"
 

@@ -18,7 +18,7 @@ from app.routers.admin import router as admin_router
 from app.tasks.twitter_analysis import celery_app
 
 # Create FastAPI app
-app = FastAPI(title="ACF Spark API", description="Backend API for ACF Spark KOL Platform")
+app = FastAPI(title="ACF Engine API", description="Backend API for ACF Engine KOL Platform")
 
 # Configure CORS
 app.add_middleware(
@@ -28,6 +28,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add exception handler for authentication errors
+from fastapi import Request, HTTPException, status
+from fastapi.responses import JSONResponse, RedirectResponse
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        # Redirect to Twitter auth page with error for authentication errors
+        if request.url.path.startswith("/twitter"):
+            return RedirectResponse(url="/static/twitter-auth.html?error=not_authenticated")
+    # For other exceptions, return the default response
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 # Include routers
 app.include_router(auth_router)
@@ -53,7 +69,7 @@ async def startup_event():
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Welcome to ACF Spark API", "status": "online"}
+    return {"message": "Welcome to ACF Engine API", "status": "online"}
 
 # Health check endpoint
 @app.get("/health")

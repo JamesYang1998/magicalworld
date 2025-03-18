@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACF Engine API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .endpoint {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .method {
+            font-weight: bold;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ACF Engine API</h1>
+        <p>Welcome to the ACF Engine API. This is the backend for the ACF Engine KOL Platform.</p>
+        
+        <h2>Available Endpoints</h2>
+        <div class="endpoint">
+            <span class="method">GET</span> /
+            <p>Root endpoint that returns a welcome message.</p>
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">POST</span> /auth/token
+            <p>Login endpoint to get an access token.</p>
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">POST</span> /auth/register
+            <p>Register a new user.</p>
+        </div>
+        
+        <h2>API Documentation</h2>
+        <p>For full API documentation, visit <a href="/docs">/docs</a> or <a href="/redoc">/redoc</a>.</p>
+    </div>
+</body>
+</html>
