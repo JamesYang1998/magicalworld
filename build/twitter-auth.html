@@ -39,7 +39,7 @@
         </div>
         
         <div class="mb-6">
-          <p class="text-gray-600 mb-4">ACF Spark 请求访问您的 Twitter 账户以验证您的身份并获取以下信息：</p>
+          <p class="text-gray-600 mb-4">ACF Engine 请求访问您的 Twitter 账户以验证您的身份并获取以下信息：</p>
           <ul class="list-disc pl-5 text-gray-600 mb-4">
             <li>您的个人资料信息</li>
             <li>您的粉丝数量</li>
@@ -57,9 +57,34 @@
     </div>
   </div>
 
-  <script>
-    // Check for code and state parameters from Twitter OAuth callback
+ <script>
+    // Check for error parameters
     const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    
+    // Display error message if present
+    if (error) {
+      const container = document.querySelector('.p-6');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+      
+      let errorMessage = '验证失败';
+      if (error === 'not_authenticated') {
+        errorMessage = '请先登录再验证Twitter账户';
+      } else if (error === 'api_error') {
+        errorMessage = '连接Twitter API时出错，请稍后再试';
+      } else if (error === 'permission_denied') {
+        errorMessage = '您需要授予ACF Engine所有请求的权限';
+      } else if (errorDescription) {
+        errorMessage = errorDescription;
+      }
+      
+      errorDiv.textContent = errorMessage;
+      container.insertBefore(errorDiv, container.firstChild);
+    }
+    
+    // Check for code and state parameters from Twitter OAuth callback
     const code = urlParams.get('code');
     const state = urlParams.get('state');
     

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACF Spark Admin Login</title>
+    <title>ACF Engine Admin Login</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-md">
         <div class="text-center">
-            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">ACF Spark Admin</h2>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">ACF Engine Admin</h2>
             <p class="mt-2 text-sm text-gray-600">Sign in to access the admin dashboard</p>
         </div>
         <form class="mt-8 space-y-6" id="login-form">
@@ -63,7 +63,7 @@
                         window.location.href = 'admin.html';
                     } else {
                         // Fallback to mock authentication
-                        if (username === 'admin' && password === 'ACF_Spark_Admin_2025') {
+                        if (username === 'admin' && password === 'ACF_Engine_Admin_2025') {
                             localStorage.setItem('admin_token', 'mock_admin_token_' + Date.now());
                             localStorage.setItem('admin_username', username);
                             window.location.href = 'admin.html';

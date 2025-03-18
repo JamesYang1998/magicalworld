@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>ACF Spark</title>
+  <title>ACF Engine</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="css/custom.css?v=2" rel="stylesheet">
   <link href="css/task-card.css?v=1" rel="stylesheet">
@@ -178,7 +178,7 @@
         <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
           <div class="max-w-4xl w-full p-6">
             <div class="text-center mb-10">
-              <h1 class="text-4xl font-extrabold text-blue-600">ACF Spark</h1>
+              <h1 class="text-4xl font-extrabold text-blue-600">ACF Engine</h1>
               <p class="mt-3 text-xl text-gray-600">
                 Connect KOLs with publishers for content creation
               </p>
@@ -270,7 +270,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -340,9 +340,15 @@
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">验证 Twitter 账户</label>
-                      <button class="btn-standard" id="verify-twitter-btn">
-                        verify
-                      </button>
+                      <div class="flex items-center">
+                        <button class="btn-standard" id="verify-twitter-btn">
+                          verify
+                        </button>
+                        <div class="ml-2 text-sm text-gray-500" id="twitter-verify-info">
+                          <span class="text-blue-600">提示：</span> 请先登录再验证Twitter账户
+                        </div>
+                      </div>
+                      <div class="mt-2 text-sm text-red-500 hidden" id="twitter-verify-error"></div>
                     </div>
                   </div>
                   <div class="mt-6 flex justify-end">
@@ -362,7 +368,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -377,12 +383,44 @@
       
       // Add event listener for Twitter verification button
       const verifyTwitterBtn = document.getElementById('verify-twitter-btn');
+      const twitterVerifyError = document.getElementById('twitter-verify-error');
+      const twitterVerifyInfo = document.getElementById('twitter-verify-info');
+
       if (verifyTwitterBtn) {
-        verifyTwitterBtn.addEventListener('click', function() {
-          // Open Twitter authorization page
-          window.location.href = 'twitter-auth.html';
+        verifyTwitterBtn.addEventListener('click', async function() {
+          try {
+            // Check if user is logged in and handle Twitter verification
+            const result = await window.api.verifyTwitter();
+            
+            // If redirected to login, show message
+            if (result && result.redirected) {
+              twitterVerifyError.textContent = result.message;
+              twitterVerifyError.classList.remove('hidden');
+            }
+          } catch (error) {
+            // Show error message
+            twitterVerifyError.textContent = '验证Twitter时出错，请稍后再试';
+            twitterVerifyError.classList.remove('hidden');
+          }
         });
       }
+      
+      // Update Twitter verification info based on login status
+      function updateTwitterVerificationInfo() {
+        const token = localStorage.getItem('auth_token');
+        const twitterVerifyInfo = document.getElementById('twitter-verify-info');
+        
+        if (twitterVerifyInfo) {
+          if (token) {
+            twitterVerifyInfo.innerHTML = '<span class="text-green-600">提示：</span> 点击验证按钮连接您的Twitter账户';
+          } else {
+            twitterVerifyInfo.innerHTML = '<span class="text-blue-600">提示：</span> 请先登录再验证Twitter账户';
+          }
+        }
+      }
+      
+      // Call this function on page load and after login/logout
+      updateTwitterVerificationInfo();
       
       // Load existing profile data if available
       if (window.api && typeof window.api.getProfileFromLocalStorage === 'function') {
@@ -564,7 +602,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -718,7 +756,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -991,7 +1029,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -1279,7 +1317,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>

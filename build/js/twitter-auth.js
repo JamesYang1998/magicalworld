@@ -9,7 +9,7 @@ const mockTwitterData = {
   tweets: [
     {
       id: '1234567890',
-      text: '很高兴加入ACF Spark平台，期待与各品牌合作！ #KOL #DigitalMarketing',
+      text: '很高兴加入ACF Engine平台，期待与各品牌合作！ #KOL #DigitalMarketing',
       created_at: '2025-03-10T12:30:00Z',
       likes: 42,
       retweets: 12
