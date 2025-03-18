@@ -197,7 +197,11 @@ async function verifyTwitter() {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      throw new Error('Not authenticated');
+      // Save current URL to return after login
+      localStorage.setItem('return_after_login', window.location.href);
+      // Redirect to login page with return URL parameter
+      window.location.href = 'index.html#/login?return_url=' + encodeURIComponent(window.location.href);
+      return { redirected: true, message: '请先登录再验证Twitter账户' };
     }
     
     // Redirect to Twitter authorization page
@@ -205,7 +209,8 @@ async function verifyTwitter() {
     return true;
   } catch (error) {
     console.error('Twitter verification error:', error);
-    throw error;
+    // Return user-friendly error message
+    return { error: true, message: '验证Twitter时出错，请稍后再试' };
   }
 }
 
