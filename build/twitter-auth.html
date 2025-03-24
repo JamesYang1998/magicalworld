@@ -39,18 +39,18 @@
         </div>
         
         <div class="mb-6">
-          <p class="text-gray-600 mb-4">ACF Spark 请求访问您的 Twitter 账户以验证您的身份并获取以下信息：</p>
+          <p class="text-gray-600 mb-4">ACF Engine requests access to your Twitter account to verify your identity and obtain the following information:</p>
           <ul class="list-disc pl-5 text-gray-600 mb-4">
-            <li>您的个人资料信息</li>
-            <li>您的粉丝数量</li>
-            <li>您的过往推文历史</li>
+            <li>Your profile information</li>
+            <li>Your follower count</li>
+            <li>Your tweet history</li>
           </ul>
-          <p class="text-gray-600">我们不会在未经您许可的情况下发布任何内容。</p>
+          <p class="text-gray-600">We will not post any content without your permission.</p>
         </div>
         
         <div class="flex justify-center">
           <button id="authorize-btn" class="btn-standard w-full">
-            授权访问
+            Authorize Access
           </button>
         </div>
       </div>
@@ -70,21 +70,21 @@
           tweets: [
             {
               id: '1234567890',
-              text: '很高兴加入ACF Spark平台，期待与各品牌合作！ #KOL #DigitalMarketing',
+              text: 'Excited to join the ACF Engine platform, looking forward to collaborating with brands! #KOL #DigitalMarketing',
               created_at: '2025-03-10T12:30:00Z',
               likes: 42,
               retweets: 12
             },
             {
               id: '1234567891',
-              text: '刚刚完成了一个加密货币项目的推广，效果非常好！ #Crypto #Marketing',
+              text: 'Just completed a cryptocurrency project promotion with great results! #Crypto #Marketing',
               created_at: '2025-03-05T09:15:00Z',
               likes: 38,
               retweets: 8
             },
             {
               id: '1234567892',
-              text: '分享一些社交媒体营销的小技巧，希望对大家有帮助！ #SocialMedia #Tips',
+              text: 'Sharing some social media marketing tips, hope they help everyone! #SocialMedia #Tips',
               created_at: '2025-02-28T15:45:00Z',
               likes: 56,
               retweets: 23
@@ -102,7 +102,7 @@
       }, 1500); // Simulate network delay
       
       // Show loading state
-      this.innerHTML = '<span class="animate-pulse">授权中...</span>';
+      this.innerHTML = '<span class="animate-pulse">Authorizing...</span>';
       this.disabled = true;
     });
   </script>

@@ -9,21 +9,21 @@ const mockTwitterData = {
   tweets: [
     {
       id: '1234567890',
-      text: '很高兴加入ACF Spark平台，期待与各品牌合作！ #KOL #DigitalMarketing',
+      text: 'Excited to join the ACF Engine platform, looking forward to collaborating with brands! #KOL #DigitalMarketing',
       created_at: '2025-03-10T12:30:00Z',
       likes: 42,
       retweets: 12
     },
     {
       id: '1234567891',
-      text: '刚刚完成了一个加密货币项目的推广，效果非常好！ #Crypto #Marketing',
+      text: 'Just completed a cryptocurrency project promotion with great results! #Crypto #Marketing',
       created_at: '2025-03-05T09:15:00Z',
       likes: 38,
       retweets: 8
     },
     {
       id: '1234567892',
-      text: '分享一些社交媒体营销的小技巧，希望对大家有帮助！ #SocialMedia #Tips',
+      text: 'Sharing some social media marketing tips, hope they help everyone! #SocialMedia #Tips',
       created_at: '2025-02-28T15:45:00Z',
       likes: 56,
       retweets: 23
@@ -56,7 +56,7 @@ function updateProfileWithTwitterData() {
   if (!twitterData) return;
   
   // Update follower count field
-  const followerCountInput = document.querySelector('input[placeholder="例如：5000"]');
+  const followerCountInput = document.querySelector('input[placeholder="Example: 5000"]');
   if (followerCountInput) {
     followerCountInput.value = twitterData.followers_count;
   }
@@ -64,13 +64,13 @@ function updateProfileWithTwitterData() {
   // Update verify button to show verified status
   const verifyButton = document.querySelector('button.btn-standard:contains("verify")');
   if (verifyButton) {
-    verifyButton.innerHTML = '✓ 已验证';
+    verifyButton.innerHTML = '✓ Verified';
     verifyButton.classList.add('bg-green-600');
     verifyButton.disabled = true;
   }
   
   // Show success message
-  showNotification('Twitter账户验证成功！', 'success');
+  showNotification('Twitter account verified successfully!', 'success');
 }
 
 // Function to show notification
