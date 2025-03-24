@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>ACF Spark</title>
+  <title>ACF Engine</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="css/custom.css?v=2" rel="stylesheet">
   <style>
@@ -75,11 +75,11 @@
       return [
         {
           id: -1,
-          title: 'Sonic 新产品宣发活动',
-          description: 'Sonic项目需要对新款游戏机进行社交媒体宣传，重点突出其低延迟和高音质特性。',
-          requirements: '需要至少一条产品使用图片和一条视频展示产品特性。内容需包含官方标签 #SonicAudio #GamingRevolution',
+          title: 'Sonic New Product Promotion',
+          description: 'Sonic project needs social media promotion for their new gaming console, highlighting its low latency and high audio quality features.',
+          requirements: 'Need at least one product image and one video showcasing product features. Content must include official tags #SonicAudio #GamingRevolution',
           platform: PlatformType.TWITTER,
-          platform_requirements: '账户粉丝至少1000名粉丝，以社交内容以科技游戏为主。',
+          platform_requirements: 'Account must have at least 1000 followers, with social content focused on technology and gaming.',
           commission: 400,
           word_count: 200,
           status: TaskStatus.OPEN,
@@ -89,11 +89,11 @@
         },
         {
           id: -2,
-          title: 'CryptoWave 市场活动推广',
-          description: 'CryptoWave平台寻找KOL推广其新的DeFi产品，需要解释产品功能并吸引潜在用户。',
-          requirements: '创建3-5分钟视频，详细介绍CryptoWave的DeFi产品功能和优势。包含注册链接。',
+          title: 'CryptoWave Marketing Campaign',
+          description: 'CryptoWave platform is looking for KOLs to promote their new DeFi product, explaining product features and attracting potential users.',
+          requirements: 'Create a 3-5 minute video detailing CryptoWave\'s DeFi product features and benefits. Include registration link.',
           platform: PlatformType.YOUTUBE,
-          platform_requirements: '频道订阅者至少5000人，内容以加密货币或金融为主。',
+          platform_requirements: 'Channel must have at least 5000 subscribers, with content focused on cryptocurrency or finance.',
           commission: 600,
           word_count: 300,
           status: TaskStatus.OPEN,
@@ -103,11 +103,11 @@
         },
         {
           id: -3,
-          title: 'FashionPlus 夏季系列宣传',
-          description: 'FashionPlus寻找时尚博主推广其2023夏季服装系列，展示产品并分享配搭建议。',
-          requirements: '发布至少3张高质量照片，展示FashionPlus夏季系列搭配。包含品牌标签和专属代码。',
+          title: 'FashionPlus Summer Collection Promotion',
+          description: 'FashionPlus is looking for fashion bloggers to promote their 2023 summer clothing collection, showcasing products and sharing styling tips.',
+          requirements: 'Post at least 3 high-quality photos showcasing FashionPlus summer collection outfits. Include brand tags and exclusive code.',
           platform: PlatformType.INSTAGRAM,
-          platform_requirements: '账户粉丝至少3000人，内容以时尚生活方式为主。',
+          platform_requirements: 'Account must have at least 3000 followers, with content focused on fashion and lifestyle.',
           commission: 350,
           word_count: 150,
           status: TaskStatus.OPEN,
@@ -125,7 +125,7 @@
         <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
           <div class="max-w-4xl w-full p-6">
             <div class="text-center mb-10">
-              <h1 class="text-4xl font-extrabold text-blue-600">ACF Spark</h1>
+              <h1 class="text-4xl font-extrabold text-blue-600">ACF Engine</h1>
               <p class="mt-3 text-xl text-gray-600">
                 Connect KOLs with publishers for content creation
               </p>
@@ -138,14 +138,14 @@
                 id="kol-card"
               >
                 <div class="p-8">
-                  <h2 class="text-2xl font-bold text-blue-600 mb-4">我是 KOL</h2>
+                  <h2 class="text-2xl font-bold text-blue-600 mb-4">I am a KOL</h2>
                   <p class="text-gray-600 mb-6">
-                    作为意见领袖，您可以接受品牌任务，在社交媒体上分享内容并获得报酬。
+                    As a Key Opinion Leader, you can accept brand tasks, share content on social media, and get paid.
                   </p>
                   <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-500">支持 Twitter, Instagram, YouTube 等平台</span>
+                    <span class="text-sm text-gray-500">Supports Twitter, Instagram, YouTube and other platforms</span>
                     <button class="btn-standard landing-btn" style="width:120px !important; height:40px !important; display:flex !important; align-items:center !important; justify-content:center !important; background-color:#2563eb !important;">
-                      查看任务
+                      View Tasks
                     </button>
                   </div>
                 </div>
@@ -157,14 +157,14 @@
                 id="publisher-card"
               >
                 <div class="p-8">
-                  <h2 class="text-2xl font-bold text-blue-600 mb-4">我是发布者</h2>
+                  <h2 class="text-2xl font-bold text-blue-600 mb-4">I am a Publisher</h2>
                   <p class="text-gray-600 mb-6">
-                    作为品牌或营销机构，您可以发布任务，寻找合适的KOL为您的产品或服务进行推广。
+                    As a brand or marketing agency, you can publish tasks and find suitable KOLs to promote your products or services.
                   </p>
                   <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-500">轻松管理营销活动</span>
+                    <span class="text-sm text-gray-500">Easily manage marketing campaigns</span>
                     <button class="btn-standard landing-btn" style="width:120px !important; height:40px !important; display:flex !important; align-items:center !important; justify-content:center !important; background-color:#2563eb !important;">
-                      发布任务
+                      Publish Task
                     </button>
                   </div>
                 </div>
@@ -194,10 +194,10 @@
       return `
         <div class="flex items-center bg-gray-200 rounded-full p-1 cursor-pointer" id="role-toggle-container">
           <div class="flex items-center ${isPublisher ? '' : 'bg-white rounded-full shadow'} px-3 py-1 transition-all">
-            <span class="${isPublisher ? 'text-gray-600' : 'text-blue-600 font-medium'}">我是 KOL</span>
+            <span class="${isPublisher ? 'text-gray-600' : 'text-blue-600 font-medium'}">I am a KOL</span>
           </div>
           <div class="flex items-center ${isPublisher ? 'bg-white rounded-full shadow' : ''} px-3 py-1 transition-all">
-            <span class="${isPublisher ? 'text-blue-600 font-medium' : 'text-gray-600'}">我是发布者</span>
+            <span class="${isPublisher ? 'text-blue-600 font-medium' : 'text-gray-600'}">I am a Publisher</span>
           </div>
         </div>
       `;
@@ -217,7 +217,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -232,21 +232,21 @@
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <div class="mb-6">
                 <div class="flex items-center justify-between">
-                  <h1 class="text-2xl font-bold">KOL 个人中心</h1>
+                  <h1 class="text-2xl font-bold">KOL Profile Center</h1>
                 </div>
                 <p class="mt-2 text-gray-600">
-                  在这里您可以管理您的KOL个人资料和接单设置。
+                  Here you can manage your KOL profile and task acceptance settings.
                 </p>
               </div>
               
               <!-- KOL Profile Section with BSC Wallet Address -->
               <div class="mb-6 bg-white shadow rounded-lg overflow-hidden">
                 <div class="p-6">
-                  <h2 class="text-xl font-semibold mb-6">KOL 个人资料</h2>
+                  <h2 class="text-xl font-semibold mb-6">KOL Profile</h2>
                   <div class="grid grid-cols-1 gap-5">
                     <!-- Single Column Layout -->
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">平台选择</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Platform Selection</label>
                       <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                         <option value="Twitter">Twitter</option>
                         <option value="Instagram">Instagram</option>
@@ -256,37 +256,37 @@
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">平台账号链接</label>
-                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：https://twitter.com/yourusername">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Platform Account Link</label>
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: https://twitter.com/yourusername">
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">当前粉丝数</label>
-                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：5000">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Current Follower Count</label>
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: 5000">
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">主要关注内容</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Main Content Focus</label>
                       <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                         <option value="Meme">Meme</option>
-                        <option value="投研">投研</option>
-                        <option value="教学">教学</option>
-                        <option value="其他">其他</option>
+                        <option value="Investment">Investment Research</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">单条报价 (USDT)</label>
-                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例如：400">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Price Per Post (USDT)</label>
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: 400">
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">收款钱包地址</label>
-                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="BSC钱包地址">
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Payment Wallet Address</label>
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="BSC wallet address">
                     </div>
                     
                     <div class="mb-4">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">验证 Twitter 账户</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Verify Twitter Account</label>
                       <button class="btn-standard" id="verify-twitter-btn">
                         verify
                       </button>
@@ -294,7 +294,7 @@
                   </div>
                   <div class="mt-6 flex justify-end">
                     <button id="save-profile-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                      保存资料
+                      Save Profile
                     </button>
                   </div>
                 </div>
@@ -309,7 +309,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -337,11 +337,11 @@
         if (existingProfile) {
           // Fill form fields with existing data
           const platformSelect = document.querySelector('select[class*="border-gray-300"]:first-of-type');
-          const platformLinkInput = document.querySelector('input[placeholder*="平台账号链接"]');
-          const followerCountInput = document.querySelector('input[placeholder*="例如：5000"]');
+          const platformLinkInput = document.querySelector('input[placeholder*="Platform Account Link"]');
+          const followerCountInput = document.querySelector('input[placeholder*="Example: 5000"]');
           const contentFocusSelect = document.querySelector('select[class*="border-gray-300"]:nth-of-type(2)');
-          const priceInput = document.querySelector('input[placeholder*="例如：400"]');
-          const walletInput = document.querySelector('input[placeholder*="BSC钱包地址"]');
+          const priceInput = document.querySelector('input[placeholder*="Example: 400"]');
+          const walletInput = document.querySelector('input[placeholder*="BSC wallet address"]');
           
           if (platformSelect) platformSelect.value = existingProfile.platform || '';
           if (platformLinkInput) platformLinkInput.value = existingProfile.platform_link || '';
@@ -361,11 +361,11 @@
           try {
             // Get form data with more robust selectors
             let platformSelect = document.querySelector('select[class*="border-gray-300"]');
-            let platformLinkInput = document.querySelector('input[placeholder*="平台账号链接"], input[placeholder*="https://twitter.com"]');
-            let followerCountInput = document.querySelector('input[placeholder*="例如：5000"], input[placeholder*="5000"]');
+            let platformLinkInput = document.querySelector('input[placeholder*="Platform Account Link"], input[placeholder*="https://twitter.com"]');
+            let followerCountInput = document.querySelector('input[placeholder*="Example: 5000"], input[placeholder*="5000"]');
             let contentFocusSelect = document.querySelector('select[class*="border-gray-300"]:nth-of-type(2)');
-            let priceInput = document.querySelector('input[placeholder*="例如：400"], input[placeholder*="400"]');
-            let walletInput = document.querySelector('input[placeholder*="BSC钱包地址"], input[placeholder*="BSC"]');
+            let priceInput = document.querySelector('input[placeholder*="Example: 400"], input[placeholder*="400"]');
+            let walletInput = document.querySelector('input[placeholder*="BSC wallet address"], input[placeholder*="BSC"]');
             
             // Debug form element detection
             console.log('Form elements found:', {
@@ -488,14 +488,14 @@
           
           // Update verify button to show verified status
           if (verifyTwitterBtn) {
-            verifyTwitterBtn.innerHTML = '✓ 已验证';
+            verifyTwitterBtn.innerHTML = '✓ Verified';
             verifyTwitterBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
             verifyTwitterBtn.classList.add('verified');
             verifyTwitterBtn.disabled = true;
           }
           
           // Show success notification
-          showNotification('Twitter账户验证成功！', 'success');
+          showNotification('Twitter account verified successfully!', 'success');
         }
       }
     }
@@ -511,7 +511,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -588,20 +588,20 @@
                     <div>
                       <!-- Task Title -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">任务标题</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：新产品宣发活动">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: New Product Launch Campaign">
                       </div>
                       
                       <!-- Task Description -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
-                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="详细描述您的营销需求..."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="Describe your marketing requirements in detail..."></textarea>
                       </div>
                       
                       <!-- Requirements -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">内容要求</label>
-                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="对内容的具体要求，如字数、格式等..."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Content Requirements</label>
+                        <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md h-24" placeholder="Specific content requirements, such as word count, format, etc..."></textarea>
                       </div>
                     </div>
                     
@@ -621,26 +621,26 @@
                       
                       <!-- Platform Requirements -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">平台要求</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：账户粉丝数要求、内容方向等">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Platform Requirements</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: Follower count requirements, content direction, etc.">
                       </div>
                       
                       <!-- Commission -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">佣金 (USDT)</label>
-                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：400">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Commission (USDT)</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: 400">
                       </div>
                       
                       <!-- Word Count -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">字数要求</label>
-                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如：200">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Word Count</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: 200">
                       </div>
                       
                       <!-- Payment Information -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">支付信息</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="BSC钱包地址">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Information</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="BSC wallet address">
                       </div>
                     </div>
                   </div>
@@ -648,7 +648,7 @@
                   <!-- Submit Button -->
                   <div class="mt-6 flex justify-end">
                     <button id="publish-task-btn" class="btn-standard">
-                      发布任务
+                      Publish Task
                     </button>
                   </div>
                 </div>
@@ -660,7 +660,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -680,18 +680,18 @@
         
         try {
           // Collect form data
-          const taskTitle = document.querySelector('input[placeholder="例如：新产品宣发活动"]').value;
-          const taskDescription = document.querySelector('textarea[placeholder="详细描述您的营销需求..."]').value;
-          const contentRequirements = document.querySelector('textarea[placeholder="对内容的具体要求，如字数、格式等..."]').value;
+          const taskTitle = document.querySelector('input[placeholder="Example: New Product Launch Campaign"]').value;
+          const taskDescription = document.querySelector('textarea[placeholder="Describe your marketing requirements in detail..."]').value;
+          const contentRequirements = document.querySelector('textarea[placeholder="Specific content requirements, such as word count, format, etc..."]').value;
           const platform = document.querySelector('select').value;
-          const platformRequirements = document.querySelector('input[placeholder="例如：账户粉丝数要求、内容方向等"]').value;
-          const commission = document.querySelector('input[placeholder="例如：400"]').value;
-          const wordCount = document.querySelector('input[placeholder="例如：200"]').value;
-          const paymentInfo = document.querySelector('input[placeholder="BSC钱包地址"]').value;
+          const platformRequirements = document.querySelector('input[placeholder="Example: Follower count requirements, content direction, etc."]').value;
+          const commission = document.querySelector('input[placeholder="Example: 400"]').value;
+          const wordCount = document.querySelector('input[placeholder="Example: 200"]').value;
+          const paymentInfo = document.querySelector('input[placeholder="BSC wallet address"]').value;
           
           // Validate form data
           if (!taskTitle || !taskDescription || !contentRequirements || !platform || !platformRequirements || !commission) {
-            showNotification('请填写所有必填字段', 'error');
+            showNotification('Please fill in all required fields', 'error');
             return;
           }
           
@@ -742,7 +742,7 @@
           }, 1000);
         } catch (error) {
           console.error('Error publishing task:', error);
-          showNotification('发布任务时出错，请重试', 'error');
+          showNotification('Error publishing task, please try again', 'error');
         }
       });
     }
@@ -781,7 +781,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -1034,7 +1034,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>

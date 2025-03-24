@@ -25,7 +25,7 @@ async function handleTwitterVerification() {
     }
   } catch (error) {
     console.error('Twitter verification error:', error);
-    showNotification('Twitter验证失败，请重试。', 'error');
+    showNotification('Twitter verification failed, please try again.', 'error');
   }
 }
 
@@ -37,7 +37,7 @@ async function updateProfileWithTwitterData() {
       const profile = await window.api.getKolProfile();
       if (profile) {
         // Update follower count field
-        const followerCountInput = document.querySelector('input[placeholder="例如：5000"]');
+        const followerCountInput = document.querySelector('input[placeholder="Example: 5000"]');
         if (followerCountInput) {
           followerCountInput.value = profile.followers_count;
         }
@@ -45,14 +45,14 @@ async function updateProfileWithTwitterData() {
         // Update verify button to show verified status
         const verifyButton = document.getElementById('verify-twitter-btn');
         if (verifyButton) {
-          verifyButton.innerHTML = '✓ 已验证';
+          verifyButton.innerHTML = '✓ Verified';
           verifyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
           verifyButton.classList.add('verified');
           verifyButton.disabled = true;
         }
         
         // Show success message
-        showNotification('Twitter账户验证成功！', 'success');
+        showNotification('Twitter account verified successfully!', 'success');
       }
     } else {
       // Fallback to localStorage
@@ -61,7 +61,7 @@ async function updateProfileWithTwitterData() {
       if (!twitterData) return;
       
       // Update follower count field
-      const followerCountInput = document.querySelector('input[placeholder="例如：5000"]');
+      const followerCountInput = document.querySelector('input[placeholder="Example: 5000"]');
       if (followerCountInput) {
         followerCountInput.value = twitterData.followers_count;
       }
@@ -69,14 +69,14 @@ async function updateProfileWithTwitterData() {
       // Update verify button to show verified status
       const verifyButton = document.getElementById('verify-twitter-btn');
       if (verifyButton) {
-        verifyButton.innerHTML = '✓ 已验证';
+        verifyButton.innerHTML = '✓ Verified';
         verifyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
         verifyButton.classList.add('verified');
         verifyButton.disabled = true;
       }
       
       // Show success message
-      showNotification('Twitter账户验证成功！', 'success');
+      showNotification('Twitter account verified successfully!', 'success');
     }
   } catch (error) {
     console.error('Error updating profile with Twitter data:', error);

@@ -250,7 +250,7 @@ function getMockUsers() {
         {
             id: 1,
             username: 'admin',
-            email: 'admin@acfspark.com',
+            email: 'admin@acfengine.com',
             role: 'admin',
             created_at: '2025-03-10 08:00:00'
         },
