@@ -401,14 +401,14 @@
             if (!platformSelect || !platformLinkInput || !followerCountInput || 
                 !contentFocusSelect || !priceInput || !walletInput) {
               const missingFields = [];
-              if (!platformSelect) missingFields.push('平台选择');
-              if (!platformLinkInput) missingFields.push('平台账号链接');
-              if (!followerCountInput) missingFields.push('粉丝数');
-              if (!contentFocusSelect) missingFields.push('内容方向');
-              if (!priceInput) missingFields.push('单条报价');
-              if (!walletInput) missingFields.push('钱包地址');
+              if (!platformSelect) missingFields.push('Platform Selection');
+              if (!platformLinkInput) missingFields.push('Platform Account Link');
+              if (!followerCountInput) missingFields.push('Follower Count');
+              if (!contentFocusSelect) missingFields.push('Content Focus');
+              if (!priceInput) missingFields.push('Price Per Post');
+              if (!walletInput) missingFields.push('Wallet Address');
               
-              throw new Error(`无法获取表单数据: ${missingFields.join(', ')}`);
+              throw new Error(`Unable to get form data: ${missingFields.join(', ')}`);
             }
             
             // Create profile data object with safe value extraction
@@ -434,9 +434,9 @@
               
               // Show success notification
               if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
-                window.twitterAuth.showNotification('个人资料保存成功！', 'success');
+                window.twitterAuth.showNotification('Profile saved successfully!', 'success');
               } else {
-                showNotification('个人资料保存成功！', 'success');
+                showNotification('Profile saved successfully!', 'success');
               }
               
               // Redirect to home page
@@ -444,13 +444,13 @@
                 window.location.hash = '#/home';
               }, 1000); // Delay to show notification
             } catch (error) {
-              console.error('保存个人资料时出错:', error);
+              console.error('Error saving profile:', error);
               
               // Show error notification
               if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
-                window.twitterAuth.showNotification('保存到API失败，但已保存到本地存储。', 'info');
+                window.twitterAuth.showNotification('Failed to save to API, but saved to local storage.', 'info');
               } else {
-                showNotification('保存到API失败，但已保存到本地存储。', 'info');
+                showNotification('Failed to save to API, but saved to local storage.', 'info');
               }
               
               // Still redirect since we saved to localStorage
@@ -459,13 +459,13 @@
               }, 1500);
             }
           } catch (error) {
-            console.error('保存个人资料失败:', error);
+            console.error('Failed to save profile:', error);
             
             // Show detailed error notification
             if (window.twitterAuth && typeof window.twitterAuth.showNotification === 'function') {
-              window.twitterAuth.showNotification(`保存个人资料失败: ${error.message}`, 'error');
+              window.twitterAuth.showNotification(`Failed to save profile: ${error.message}`, 'error');
             } else {
-              showNotification(`保存个人资料失败: ${error.message}`, 'error');
+              showNotification(`Failed to save profile: ${error.message}`, 'error');
             }
           }
         });
@@ -481,7 +481,7 @@
         
         if (twitterData) {
           // Update follower count field
-          const followerCountInput = document.querySelector('input[placeholder="例如：5000"]');
+          const followerCountInput = document.querySelector('input[placeholder="Example: 5000"]');
           if (followerCountInput) {
             followerCountInput.value = twitterData.followers_count;
           }
@@ -526,26 +526,26 @@
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <div class="mb-6">
                 <div class="flex items-center justify-between">
-                  <h1 class="text-2xl font-bold">发布营销任务</h1>
+                  <h1 class="text-2xl font-bold">Publish Marketing Task</h1>
                 </div>
                 <p class="mt-2 text-gray-600">
-                  在这里您可以发布营销任务，寻找合适的KOL为您的产品或服务进行推广。
+                  Here you can publish marketing tasks and find suitable KOLs to promote your products or services.
                 </p>
               </div>
               
               <!-- Business Display Section -->
               <div class="mb-8">
-                <h2 class="text-xl font-semibold mb-4">业务展示</h2>
+                <h2 class="text-xl font-semibold mb-4">Business Display</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <!-- Business Card 1 -->
                   <div class="bg-white shadow rounded-lg overflow-hidden">
                     <div class="p-5">
-                      <h3 class="font-bold text-lg text-blue-600 mb-2">社交媒体推广</h3>
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">Social Media Promotion</h3>
                       <p class="text-gray-600 text-sm mb-3">
-                        通过KOL在各大社交媒体平台上的影响力，为您的产品或服务获得更多曝光和关注。
+                        Leverage KOLs' influence on major social media platforms to gain more exposure and attention for your products or services.
                       </p>
                       <div class="flex items-center text-sm text-gray-500">
-                        <span>适用平台: Twitter, Instagram, TikTok</span>
+                        <span>Applicable platforms: Twitter, Instagram, TikTok</span>
                       </div>
                     </div>
                   </div>
@@ -553,12 +553,12 @@
                   <!-- Business Card 2 -->
                   <div class="bg-white shadow rounded-lg overflow-hidden">
                     <div class="p-5">
-                      <h3 class="font-bold text-lg text-blue-600 mb-2">内容创作</h3>
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">Content Creation</h3>
                       <p class="text-gray-600 text-sm mb-3">
-                        由专业KOL为您创作高质量内容，包括视频、图文等形式，展示产品特性和优势。
+                        Professional KOLs create high-quality content for you, including videos and visual content, showcasing product features and advantages.
                       </p>
                       <div class="flex items-center text-sm text-gray-500">
-                        <span>适用平台: YouTube, 博客</span>
+                        <span>Applicable platforms: YouTube, Blogs</span>
                       </div>
                     </div>
                   </div>
@@ -566,12 +566,12 @@
                   <!-- Business Card 3 -->
                   <div class="bg-white shadow rounded-lg overflow-hidden">
                     <div class="p-5">
-                      <h3 class="font-bold text-lg text-blue-600 mb-2">品牌合作</h3>
+                      <h3 class="font-bold text-lg text-blue-600 mb-2">Brand Collaboration</h3>
                       <p class="text-gray-600 text-sm mb-3">
-                        与KOL建立长期合作关系，通过持续的内容输出，提升品牌知名度和用户信任度。
+                        Establish long-term partnerships with KOLs to enhance brand awareness and user trust through continuous content output.
                       </p>
                       <div class="flex items-center text-sm text-gray-500">
-                        <span>适用平台: 全平台</span>
+                        <span>Applicable platforms: All platforms</span>
                       </div>
                     </div>
                   </div>
@@ -581,7 +581,7 @@
               <!-- Input Form Section -->
               <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="p-6">
-                  <h2 class="text-xl font-semibold mb-4">发布新任务</h2>
+                  <h2 class="text-xl font-semibold mb-4">Publish New Task</h2>
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Left Column -->
@@ -609,9 +609,9 @@
                     <div>
                       <!-- Platform -->
                       <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">目标平台</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Platform</label>
                         <select class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                          <option value="">请选择平台</option>
+                          <option value="">Please select platform</option>
                           <option value="Twitter">Twitter</option>
                           <option value="Instagram">Instagram</option>
                           <option value="YouTube">YouTube</option>
@@ -713,7 +713,7 @@
           localStorage.setItem('newlyCreatedTask', JSON.stringify(newTask));
           
           // Show success notification
-          showNotification('任务发布成功！', 'success');
+          showNotification('Task published successfully!', 'success');
           
           console.log('Task published successfully, navigating to home page in 1 second');
           
@@ -796,10 +796,10 @@
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <div class="mb-6">
                 <div class="flex items-center justify-between">
-                  <h1 class="text-2xl font-bold">首页</h1>
+                  <h1 class="text-2xl font-bold">Home</h1>
                 </div>
                 <p class="mt-2 text-gray-600">
-                  浏览当前可接的营销任务，选择适合您的任务进行申请。
+                  Browse current available marketing tasks and apply for those that suit you.
                 </p>
               </div>
               
@@ -819,19 +819,19 @@
                       </p>
                       <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="font-medium text-gray-700">Budget per KOL:</span>
                           <span class="text-gray-600">${firstTask.commission} USDT</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">KOL数量:</span>
-                          <span class="text-gray-600">待定</span>
+                          <span class="font-medium text-gray-700">Number of KOLs:</span>
+                          <span class="text-gray-600">To be determined</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">字数要求:</span>
-                          <span class="text-gray-600">${firstTask.word_count > 0 ? firstTask.word_count : '不限'}</span>
+                          <span class="font-medium text-gray-700">Word Count Requirement:</span>
+                          <span class="text-gray-600">${firstTask.word_count > 0 ? firstTask.word_count : 'No limit'}</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="font-medium text-gray-700">Follower Requirement:</span>
                           <span class="text-gray-600">${firstTask.platform_requirements}</span>
                         </div>
                       </div>
@@ -844,7 +844,7 @@
                     </div>
                     <div class="mt-4 flex justify-end">
                       <button class="btn-standard">
-                        申请任务
+                        Apply for Task
                       </button>
                     </div>
                   </div>
@@ -859,23 +859,23 @@
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
-                        Sonic 游戏新版本发布，需要KOL在Twitter上进行宣传推广，强调游戏的新特性和玩法。
+                        Sonic game new version release needs KOLs to promote on Twitter, highlighting the game's new features and gameplay.
                       </p>
                       <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="font-medium text-gray-700">Budget per KOL:</span>
                           <span class="text-gray-600">400 USDT</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">KOL数量:</span>
-                          <span class="text-gray-600">20人</span>
+                          <span class="font-medium text-gray-700">Number of KOLs:</span>
+                          <span class="text-gray-600">20 people</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">字数要求:</span>
-                          <span class="text-gray-600">200-300字</span>
+                          <span class="font-medium text-gray-700">Word Count Requirement:</span>
+                          <span class="text-gray-600">200-300 words</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="font-medium text-gray-700">Follower Requirement:</span>
                           <span class="text-gray-600">5000+</span>
                         </div>
                       </div>
@@ -883,12 +883,12 @@
                     <div class="border-t border-gray-200 pt-4">
                       <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
                       <p class="text-gray-600 text-sm">
-                        推文需包含Sonic游戏的新特性介绍，如新角色、新关卡和多人游戏模式。需要使用官方提供的游戏截图，并附上游戏下载链接。推文语调应轻松活泼，与Sonic品牌形象一致。
+                        Tweets should include an introduction to Sonic game's new features, such as new characters, new levels, and multiplayer mode. Use official game screenshots and include the game download link. The tweet tone should be light and lively, consistent with the Sonic brand image.
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
                       <button class="btn-standard">
-                        申请任务
+                        Apply for Task
                       </button>
                     </div>
                   </div>
@@ -900,27 +900,27 @@
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Binance Trading Competition</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">全平台</span>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">All Platforms</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
-                        Binance交易所举办交易大赛，需要KOL在各大社交媒体平台宣传活动详情和参与方式。
+                        Binance exchange is hosting a trading competition and needs KOLs to promote event details and participation methods on major social media platforms.
                       </p>
                       <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="font-medium text-gray-700">Budget per KOL:</span>
                           <span class="text-gray-600">600 USDT</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">KOL数量:</span>
-                          <span class="text-gray-600">15人</span>
+                          <span class="font-medium text-gray-700">Number of KOLs:</span>
+                          <span class="text-gray-600">15 people</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">字数要求:</span>
-                          <span class="text-gray-600">300-500字</span>
+                          <span class="font-medium text-gray-700">Word Count Requirement:</span>
+                          <span class="text-gray-600">300-500 words</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="font-medium text-gray-700">Follower Requirement:</span>
                           <span class="text-gray-600">10000+</span>
                         </div>
                       </div>
@@ -928,12 +928,12 @@
                     <div class="border-t border-gray-200 pt-4">
                       <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
                       <p class="text-gray-600 text-sm">
-                        内容需详细介绍交易大赛的规则、奖励机制和参与方式。强调Binance平台的安全性和流动性优势。需要引导用户注册Binance账户并参与活动。可以分享个人使用Binance的经验和心得。
+                        Content should detail the trading competition rules, reward mechanisms, and participation methods. Emphasize Binance platform's security and liquidity advantages. Guide users to register Binance accounts and participate in the activity. Share personal experiences and insights from using Binance.
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
                       <button class="btn-standard">
-                        申请任务
+                        Apply for Task
                       </button>
                     </div>
                   </div>
@@ -948,23 +948,23 @@
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
-                        Azuki NFT新系列即将发布，需要KOL在Twitter和Instagram上进行预热宣传，吸引潜在收藏者关注。
+                        Azuki NFT new collection is about to be released, requiring KOLs to create promotional content on Twitter and Instagram to attract potential collectors.
                       </p>
                       <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="font-medium text-gray-700">Budget per KOL:</span>
                           <span class="text-gray-600">500 USDT</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">KOL数量:</span>
-                          <span class="text-gray-600">10人</span>
+                          <span class="font-medium text-gray-700">Number of KOLs:</span>
+                          <span class="text-gray-600">10 people</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">字数要求:</span>
-                          <span class="text-gray-600">不限</span>
+                          <span class="font-medium text-gray-700">Word Count Requirement:</span>
+                          <span class="text-gray-600">No limit</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="font-medium text-gray-700">Follower Requirement:</span>
                           <span class="text-gray-600">8000+</span>
                         </div>
                       </div>
@@ -972,12 +972,12 @@
                     <div class="border-t border-gray-200 pt-4">
                       <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
                       <p class="text-gray-600 text-sm">
-                        内容需展示Azuki NFT的艺术价值和社区文化，分享官方提供的NFT预览图，并介绍铸造日期、价格和获取方式。可以分享对NFT市场的见解和Azuki项目的未来发展前景。
+                        Content should showcase Azuki NFT's artistic value and community culture, share official NFT preview images, and introduce minting date, price, and acquisition methods. Share insights on the NFT market and Azuki project's future development prospects.
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
                       <button class="btn-standard">
-                        申请任务
+                        Apply for Task
                       </button>
                     </div>
                   </div>
@@ -987,28 +987,28 @@
                 <div class="bg-white shadow rounded-lg overflow-hidden">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">Aave V3 功能介绍</h2>
+                      <h2 class="text-xl font-semibold text-blue-600">Aave V3 Feature Introduction</h2>
                       <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">YouTube</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
-                        Aave V3版本上线，需要KOL制作YouTube视频详细介绍新功能和使用方法，吸引更多用户使用该DeFi平台。
+                        Aave V3 version is online, requiring KOLs to create YouTube videos detailing new features and usage methods to attract more users to this DeFi platform.
                       </p>
                       <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-gray-700">单人预算:</span>
+                          <span class="font-medium text-gray-700">Budget per KOL:</span>
                           <span class="text-gray-600">800 USDT</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">KOL数量:</span>
-                          <span class="text-gray-600">5人</span>
+                          <span class="font-medium text-gray-700">Number of KOLs:</span>
+                          <span class="text-gray-600">5 people</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">视频长度:</span>
-                          <span class="text-gray-600">10-15分钟</span>
+                          <span class="font-medium text-gray-700">Video Length:</span>
+                          <span class="text-gray-600">10-15 minutes</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-700">粉丝要求:</span>
+                          <span class="font-medium text-gray-700">Follower Requirement:</span>
                           <span class="text-gray-600">15000+</span>
                         </div>
                       </div>
@@ -1016,12 +1016,12 @@
                     <div class="border-t border-gray-200 pt-4">
                       <h3 class="text-md font-medium text-gray-700 mb-2">Brief:</h3>
                       <p class="text-gray-600 text-sm">
-                        视频需详细演示Aave V3的新功能，如跨链借贷、隔离模式和高效模式等。需要进行实际操作演示，并解释各功能的优势和适用场景。内容应既适合DeFi新手理解，又能为资深用户提供有价值的信息。
+                        Videos should demonstrate Aave V3's new features in detail, such as cross-chain lending, isolation mode, and efficiency mode. Provide practical operation demonstrations and explain the advantages and applicable scenarios of each feature. Content should be understandable for DeFi beginners while providing valuable information for experienced users.
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
                       <button class="btn-standard">
-                        申请任务
+                        Apply for Task
                       </button>
                     </div>
                   </div>
@@ -1116,7 +1116,7 @@
         }, 500);
       } catch (error) {
         console.error('Error handling role toggle:', error);
-        showNotification('切换角色时出错，请重试', 'error');
+        showNotification('Error switching roles, please try again', 'error');
       }
       
       return false;
@@ -1172,7 +1172,7 @@
           console.log(`Completed navigation to ${hashPath} in ${navigationEndTime - navigationStartTime}ms`);
         } catch (error) {
           console.error('Error rendering page:', error);
-          showNotification('页面加载出错，请重试', 'error');
+          showNotification('Error loading page, please try again', 'error');
           // Fallback to landing page if rendering fails
           renderLandingPage();
         }
