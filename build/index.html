@@ -192,12 +192,12 @@
       const isPublisher = selectedRole === UserRole.PUBLISHER;
       
       return `
-        <div class="flex items-center bg-gray-200 rounded-full p-1 cursor-pointer" id="role-toggle-container">
+        <div class="flex items-center bg-gray-100 rounded-full p-1 cursor-pointer" id="role-toggle-container">
           <div class="flex items-center ${isPublisher ? '' : 'bg-white rounded-full shadow'} px-3 py-1 transition-all">
-            <span class="${isPublisher ? 'text-gray-600' : 'text-blue-600 font-medium'}">I am a KOL</span>
+            <span class="${isPublisher ? 'text-gray-600' : 'text-purple-600 font-medium'}">I am a KOL</span>
           </div>
           <div class="flex items-center ${isPublisher ? 'bg-white rounded-full shadow' : ''} px-3 py-1 transition-all">
-            <span class="${isPublisher ? 'text-blue-600 font-medium' : 'text-gray-600'}">I am a Publisher</span>
+            <span class="${isPublisher ? 'text-purple-600 font-medium' : 'text-gray-600'}">I am a Publisher</span>
           </div>
         </div>
       `;
@@ -212,12 +212,12 @@
       app.innerHTML = `
         <div class="min-h-screen bg-gray-100">
           <!-- Header -->
-          <header class="bg-white shadow">
+          <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
+                    <button id="back-to-home" class="text-xl font-bold text-purple-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -240,14 +240,14 @@
               </div>
               
               <!-- KOL Profile Section with BSC Wallet Address -->
-              <div class="mb-6 bg-white shadow rounded-lg overflow-hidden">
+              <div class="mb-6 bg-white shadow-lg rounded-xl overflow-hidden">
                 <div class="p-6">
-                  <h2 class="text-xl font-semibold mb-6">KOL Profile</h2>
+                  <h2 class="text-xl font-semibold mb-6 text-gray-900">KOL Profile</h2>
                   <div class="grid grid-cols-1 gap-5">
                     <!-- Single Column Layout -->
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Platform Selection</label>
-                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
                         <option value="Twitter">Twitter</option>
                         <option value="Instagram">Instagram</option>
                         <option value="YouTube">YouTube</option>
@@ -257,17 +257,17 @@
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Platform Account Link</label>
-                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: https://twitter.com/yourusername">
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: https://twitter.com/yourusername">
                     </div>
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Current Follower Count</label>
-                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: 5000">
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: 5000">
                     </div>
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Main Content Focus</label>
-                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                      <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
                         <option value="Meme">Meme</option>
                         <option value="Investment">Investment Research</option>
                         <option value="Education">Education</option>
@@ -277,23 +277,23 @@
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Price Per Post (USDT)</label>
-                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Example: 400">
+                      <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: 400">
                     </div>
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Payment Wallet Address</label>
-                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="BSC wallet address">
+                      <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="BSC wallet address">
                     </div>
                     
                     <div class="mb-4">
                       <label class="block text-sm font-medium text-gray-700 mb-2">Verify Twitter Account</label>
-                      <button class="btn-standard" id="verify-twitter-btn">
-                        verify
+                      <button class="btn-standard" id="verify-twitter-btn" style="background-color: var(--primary-color) !important;">
+                        Verify
                       </button>
                     </div>
                   </div>
                   <div class="mt-6 flex justify-end">
-                    <button id="save-profile-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                    <button id="save-profile-btn" class="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 transition-colors">
                       Save Profile
                     </button>
                   </div>
@@ -506,12 +506,12 @@
       app.innerHTML = `
         <div class="min-h-screen bg-gray-100">
           <!-- Header -->
-          <header class="bg-white shadow">
+          <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
+                    <button id="back-to-home" class="text-xl font-bold text-purple-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -610,7 +610,7 @@
                       <!-- Platform -->
                       <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Target Platform</label>
-                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
                           <option value="">Please select platform</option>
                           <option value="Twitter">Twitter</option>
                           <option value="Instagram">Instagram</option>
@@ -622,32 +622,32 @@
                       <!-- Platform Requirements -->
                       <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Platform Requirements</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: Follower count requirements, content direction, etc.">
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: Follower count requirements, content direction, etc.">
                       </div>
                       
                       <!-- Commission -->
                       <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Commission (USDT)</label>
-                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: 400">
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: 400">
                       </div>
                       
                       <!-- Word Count -->
                       <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Word Count</label>
-                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Example: 200">
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="Example: 200">
                       </div>
                       
                       <!-- Payment Information -->
                       <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Payment Information</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="BSC wallet address">
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500" placeholder="BSC wallet address">
                       </div>
                     </div>
                   </div>
                   
                   <!-- Submit Button -->
                   <div class="mt-6 flex justify-end">
-                    <button id="publish-task-btn" class="btn-standard">
+                    <button id="publish-task-btn" class="btn-standard" style="background-color: var(--primary-color) !important;">
                       Publish Task
                     </button>
                   </div>
@@ -776,12 +776,12 @@
       app.innerHTML = `
         <div class="min-h-screen bg-gray-100">
           <!-- Header -->
-          <header class="bg-white shadow">
+          <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
+                    <button id="back-to-home" class="text-xl font-bold text-purple-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -807,11 +807,11 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- First Banner - Newly Created Task or Default -->
                 ${firstTask ? `
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">${firstTask.title}</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${firstTask.platform}</span>
+                      <h2 class="text-xl font-semibold text-purple-600">${firstTask.title}</h2>
+                      <span class="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">${firstTask.platform}</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -843,7 +843,7 @@
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
+                      <button class="btn-standard" style="background-color: var(--primary-color) !important;">
                         Apply for Task
                       </button>
                     </div>
@@ -851,11 +851,11 @@
                 </div>
                 ` : `
                 <!-- Sonic Twitter Campaign -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">Sonic Twitter Campaign</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter</span>
+                      <h2 class="text-xl font-semibold text-purple-600">Sonic Twitter Campaign</h2>
+                      <span class="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">Twitter</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -887,7 +887,7 @@
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
+                      <button class="btn-standard" style="background-color: var(--primary-color) !important;">
                         Apply for Task
                       </button>
                     </div>
@@ -896,11 +896,11 @@
                 `}
                 
                 <!-- Crypto Exchange Campaign -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">Binance Trading Competition</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">All Platforms</span>
+                      <h2 class="text-xl font-semibold text-purple-600">Binance Trading Competition</h2>
+                      <span class="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">All Platforms</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -932,7 +932,7 @@
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
+                      <button class="btn-standard" style="background-color: var(--primary-color) !important;">
                         Apply for Task
                       </button>
                     </div>
@@ -940,11 +940,11 @@
                 </div>
                 
                 <!-- NFT Project -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">Azuki NFT Collection</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter/Instagram</span>
+                      <h2 class="text-xl font-semibold text-purple-600">Azuki NFT Collection</h2>
+                      <span class="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">Twitter/Instagram</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -976,7 +976,7 @@
                       </p>
                     </div>
                     <div class="mt-4 flex justify-end">
-                      <button class="btn-standard">
+                      <button class="btn-standard" style="background-color: var(--primary-color) !important;">
                         Apply for Task
                       </button>
                     </div>
@@ -984,11 +984,11 @@
                 </div>
                 
                 <!-- DeFi Project -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all">
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                      <h2 class="text-xl font-semibold text-blue-600">Aave V3 Feature Introduction</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">YouTube</span>
+                      <h2 class="text-xl font-semibold text-purple-600">Aave V3 Feature Introduction</h2>
+                      <span class="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">YouTube</span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
