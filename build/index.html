@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>ACF Spark</title>
+  <title>ACF Engine</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="css/custom.css?v=2" rel="stylesheet">
   <style>
@@ -125,7 +125,7 @@
         <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
           <div class="max-w-4xl w-full p-6">
             <div class="text-center mb-10">
-              <h1 class="text-4xl font-extrabold text-blue-600">ACF Spark</h1>
+              <h1 class="text-4xl font-extrabold text-blue-600">ACF Engine</h1>
               <p class="mt-3 text-xl text-gray-600">
                 Connect KOLs with publishers for content creation
               </p>
@@ -143,7 +143,7 @@
                     作为意见领袖，您可以接受品牌任务，在社交媒体上分享内容并获得报酬。
                   </p>
                   <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-500">支持 Twitter, Instagram, YouTube 等平台</span>
+                    <span class="text-sm text-gray-500">支持 Twitter (Instagram, YouTube 和 TikTok 即将推出)</span>
                     <button class="btn-standard landing-btn" style="width:120px !important; height:40px !important; display:flex !important; align-items:center !important; justify-content:center !important; background-color:#2563eb !important;">
                       查看任务
                     </button>
@@ -206,7 +206,14 @@
     // Render sample tasks page for KOLs
     function renderSampleTasksPage() {
       const selectedRole = localStorage.getItem('selectedRole') || UserRole.KOL;
-      const tasks = getSampleTasks();
+      let tasks = getSampleTasks();
+      
+      // Get user's follower count from profile if available
+      const userProfile = window.api && window.api.getProfileFromLocalStorage ? window.api.getProfileFromLocalStorage() : null;
+      const userFollowerCount = userProfile ? parseInt(userProfile.followers_count) || 0 : 0;
+      
+      // Filter tasks by follower count
+      tasks = window.api && window.api.filterTasksByFollowerCount ? window.api.filterTasksByFollowerCount(tasks, userFollowerCount) : tasks;
       
       const app = document.getElementById('app');
       app.innerHTML = `
@@ -217,7 +224,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -239,6 +246,19 @@
                 </p>
               </div>
               
+              <!-- Follower Count Indicator -->
+              <div class="mb-6 bg-white shadow rounded-lg overflow-hidden">
+                <div class="p-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-sm font-medium text-gray-700">您当前的粉丝数: </span>
+                      <span class="text-sm text-gray-600">${userFollowerCount || '未设置'}</span>
+                    </div>
+                    <div class="text-sm text-gray-500">任务将根据您的粉丝数自动筛选</div>
+                  </div>
+                </div>
+              </div>
+              
               <!-- KOL Profile Section with BSC Wallet Address -->
               <div class="mb-6 bg-white shadow rounded-lg overflow-hidden">
                 <div class="p-6">
@@ -249,9 +269,9 @@
                       <label class="block text-sm font-medium text-gray-700 mb-2">平台选择</label>
                       <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                         <option value="Twitter">Twitter</option>
-                        <option value="Instagram">Instagram</option>
-                        <option value="YouTube">YouTube</option>
-                        <option value="TikTok">TikTok</option>
+                        <option value="Instagram" disabled>Instagram (Coming Soon)</option>
+                        <option value="YouTube" disabled>YouTube (Coming Soon)</option>
+                        <option value="TikTok" disabled>TikTok (Coming Soon)</option>
                       </select>
                     </div>
                     
@@ -309,7 +329,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -511,7 +531,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -613,9 +633,9 @@
                         <select class="w-full px-3 py-2 border border-gray-300 rounded-md">
                           <option value="">请选择平台</option>
                           <option value="Twitter">Twitter</option>
-                          <option value="Instagram">Instagram</option>
-                          <option value="YouTube">YouTube</option>
-                          <option value="TikTok">TikTok</option>
+                          <option value="Instagram" disabled>Instagram (Coming Soon)</option>
+                          <option value="YouTube" disabled>YouTube (Coming Soon)</option>
+                          <option value="TikTok" disabled>TikTok (Coming Soon)</option>
                         </select>
                       </div>
                       
@@ -660,7 +680,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>
@@ -781,7 +801,7 @@
               <div class="flex justify-between h-16">
                 <div class="flex">
                   <div class="flex-shrink-0 flex items-center">
-                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Spark</button>
+                    <button id="back-to-home" class="text-xl font-bold text-blue-600">ACF Engine</button>
                   </div>
                 </div>
                 <div class="flex items-center">
@@ -944,7 +964,10 @@
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Azuki NFT Collection</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Twitter/Instagram</span>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                        Twitter/Instagram
+                        <span class="coming-soon-badge">Instagram Coming Soon</span>
+                      </span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -988,7 +1011,10 @@
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                       <h2 class="text-xl font-semibold text-blue-600">Aave V3 功能介绍</h2>
-                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">YouTube</span>
+                      <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                        YouTube
+                        <span class="coming-soon-badge">Coming Soon</span>
+                      </span>
                     </div>
                     <div class="mb-4">
                       <p class="text-gray-700 mb-3">
@@ -1034,7 +1060,7 @@
           <footer class="bg-white border-t border-gray-200 py-4">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p class="text-center text-sm text-gray-500">
-                &copy; ${new Date().getFullYear()} ACF Spark. All rights reserved.
+                &copy; ${new Date().getFullYear()} ACF Engine. All rights reserved.
               </p>
             </div>
           </footer>

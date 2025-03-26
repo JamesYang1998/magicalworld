@@ -11,3 +11,24 @@
 .btn-standard:hover, button.btn-standard:hover, .btn-standard.landing-btn:hover, button.btn-standard.landing-btn:hover {
   background-color: #1d4ed8 !important;
 }
+
+/* Add styling for coming soon platforms */
+option[disabled] {
+  color: #9CA3AF;
+}
+
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #EDE9FE;
+  color: #8B5CF6;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.5rem;
+}
+
+.platform-badge.coming-soon {
+  background-color: #EDE9FE;
+  color: #8B5CF6;
+}

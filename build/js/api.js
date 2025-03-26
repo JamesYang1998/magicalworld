@@ -309,6 +309,40 @@ function getProfileFromLocalStorage() {
   return profileData ? JSON.parse(profileData) : null;
 }
 
+// Parse follower count from platform requirements string
+function parseFollowerCount(requirementsString) {
+  if (!requirementsString) return 0;
+  
+  // Match patterns like "5,000+", "at least 5,000", "至少5000名粉丝", etc.
+  const matches = requirementsString.match(/(\d+)[,\s]*(\d+)?[k+]?/i);
+  if (matches && matches[1]) {
+    let count = parseInt(matches[1], 10);
+    
+    // Handle thousands separator if present
+    if (matches[2]) {
+      count = count * 1000 + parseInt(matches[2], 10);
+    }
+    
+    // Handle "k" suffix (e.g., "5k+" means 5000)
+    if (requirementsString.toLowerCase().includes('k')) {
+      count *= 1000;
+    }
+    
+    return count;
+  }
+  return 0;
+}
+
+// Filter tasks by follower count
+function filterTasksByFollowerCount(tasks, userFollowerCount) {
+  if (!userFollowerCount) return tasks;
+  
+  return tasks.filter(task => {
+    const requiredFollowers = parseFollowerCount(task.platform_requirements);
+    return userFollowerCount >= requiredFollowers;
+  });
+}
+
 // Export API functions
 window.api = {
   login,
@@ -321,5 +355,7 @@ window.api = {
   verifyTwitterLink,
   createSubmission,
   getSampleTasks,
-  getProfileFromLocalStorage
+  getProfileFromLocalStorage,
+  parseFollowerCount,
+  filterTasksByFollowerCount
 };
