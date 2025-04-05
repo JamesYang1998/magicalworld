@@ -1,0 +1,25 @@
+{
+  "restaurant": "Jims Club",
+  "location": "Xintiandi, Shanghai, China",
+  "category": "Fusion",
+  "style": "Modern Shanghainese with international influences",
+  "recommended_dishes": [
+    "Soy-glazed pork belly with plum reduction",
+    "Avocado tofu salad",
+    "Signature 'Sunset' cocktail"
+  ],
+  "use_cases": [
+    "brunch",
+    "date night",
+    "business dinner"
+  ],
+  "tags": [
+    "shanghai fusion",
+    "brunch shanghai",
+    "xintiandi restaurant",
+    "本帮融合菜",
+    "情侣约会餐厅",
+    "本地人推荐"
+  ],
+  "description": "Jims Club is a modern fusion restaurant located in Shanghai's Xintiandi. It combines traditional Shanghainese flavors with global culinary influences, offering a unique and elegant dining experience."
+}
